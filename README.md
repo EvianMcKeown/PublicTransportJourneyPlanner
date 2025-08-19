@@ -6,7 +6,7 @@
 
 ## Project status
 - [X] Stage 1 - Project Startup
-- [ ] Stage 2 - Planning and Modelling
+- [X] Stage 2 - Planning and Modelling
 - [ ] Stage 3 - Prototype
 - [ ] Stage 4 - Implementation and Testing
 

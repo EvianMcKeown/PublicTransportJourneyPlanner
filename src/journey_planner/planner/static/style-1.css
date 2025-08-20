@@ -1,0 +1,65 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* For variable font support in modern browsers */
+@supports (font-variation-settings: normal) {
+    body {
+        font-family: 'Inter var', sans-serif !important;
+    }
+}
+
+:root {
+    /* Colours defined in triplet format (r, g, b) */
+    --bg100: 32, 32, 32;
+    --bg200: 42, 42, 42;
+    --bg300: 52, 52, 52;
+    --bg400: 62, 62, 62;
+    --bg500: 72, 72, 72;
+    --bg600: 82, 82, 82;
+    --bg700: 92, 92, 92;
+    --bg800: 102, 102, 102;
+    --fg100: 255, 255, 255;
+    --fg200: 220, 220, 220;
+    --fg300: 180, 180, 180;
+    --accent-color: 221, 160, 33;
+    --accent-color-hover: 241, 193, 48;
+
+}
+
+body {
+    background-image: url("/static/assets/background-main.jpg");
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+h1,
+p {
+    color: rgb(var(--fg100));
+    font-size: 2em;
+    text-align: center;
+    padding: 20px;
+    /* Padding vs margin: Padding adds space inside the element, margin adds outside the element*/
+}
+
+/* Style of hyperlinks */
+a:link,
+a:visited {
+    background-color: rgba(var(--bg300), 0.6);
+    color: rgb(var(--fg100));
+    padding: 15px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 18px;
+    box-shadow: 0 0px 12px rgba(0, 0, 0, 0.20), 0 0px 4px rgba(0, 0, 0, 0.20);
+    border: solid 1px rgba(var(--fg100), 0.2);
+    backdrop-filter: blur(5px);
+    transition: cubic-bezier(0.4, 0, 0.2, 1) 0.3s background-color;
+}
+
+a:hover,
+a:active {
+    background-color: rgba(var(--bg500), 0.6);
+    transition: cubic-bezier(0.4, 0, 0.2, 1) 0.3s background-color;
+}

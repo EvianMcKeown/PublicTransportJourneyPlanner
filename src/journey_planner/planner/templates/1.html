@@ -1,0 +1,54 @@
+<!-- filepath: /home/evianmckeown/Documents/University/2025/CSC3003S/capstone-project/capstone-project-MCKEVI001-JSSBEN002-NDXSHA111/src/journey_planner/planner/templates/1.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journey Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'style-1.css' %}">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+</head>
+
+<body class="overflow-y-scroll">
+    <!-- This is a comment-->
+    <header class="fixed top-0 left-0 w-full bg-[#343434]/60 border-solid border-b-2 border-white/15 shadow-lg backdrop-blur-lg z-50">
+        <div class="container mx-auto flex items-center justify-between p-1">
+            <h1 class="text-white text-xl font-bold">Journey Planner</h1>
+            <div class="profile-picture w-10 h-10 bg-gray-300 rounded-full">
+                <img src="{% static 'assets/profile-picture.jpg' %}" alt="Profile Picture" class="w-full h-full object-cover rounded-full">
+            </div>
+        </div>
+    </header>
+    <main class="pt-24 px-4">
+        <section class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900">Welcome to the Journey Planner Application!</h2>
+            <p class="text-gray-700 mt-4 text-lg">Plan your next trip efficiently and effortlessly.</p>
+        </section>
+        <br>
+        <section class="text-center">
+            <p class="text-gray-600 mb-6 text-base">Use this tool to organize your travel plans, explore destinations, and manage your itinerary.</p>
+            <a href="https://w3schools.com/" class="text-blue-600 hover:text-blue-800 hover:underline font-semibold transition duration-200 ease-in-out">
+            Click here for more information
+            </a>
+        </section>
+        <section class="mt-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white/60 shadow-lg rounded-lg p-4 backdrop-blur-sm">
+                    <h3 class="text-lg font-semibold text-gray-800">Feature 1</h3>
+                    <p class="text-gray-600 mt-2">Discover new destinations and plan your routes with ease.</p>
+                </div>
+                <div class="bg-white/60 shadow-lg rounded-lg p-4 backdrop-blur-sm">
+                    <h3 class="text-lg font-semibold text-gray-800">Feature 2</h3>
+                    <p class="text-gray-600 mt-2">Save your favorite places and access them anytime.</p>
+                </div>
+                <div class="bg-white/60 shadow-lg rounded-lg p-4 backdrop-blur-sm">
+                    <h3 class="text-lg font-semibold text-gray-800">Feature 3</h3>
+                    <p class="text-gray-600 mt-2 text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sed nisi eu nisi euismod pretium sit amet id ex. Curabitur tristique accumsan magna. Sed sed ipsum felis. Vestibulum a sem dui. Vivamus suscipit ullamcorper viverra. Aenean eu laoreet erat. Vestibulum lobortis auctor pharetra. Mauris mi lorem, tempor eu risus vitae, malesuada pulvinar lacus. Ut vitae finibus mauris, sed auctor libero. Nulla id porttitor enim, id laoreet lacus. Nulla rutrum molestie sem eu sollicitudin.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>

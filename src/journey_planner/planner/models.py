@@ -50,7 +50,7 @@ class Route(models.Model):
     start_date_time = models.DateTimeField()
 
     def __str__(self):
-        return f"Route from {self.start_location} to {self.end_location} starting on {self.date}"
+        return f"User: '{self.user}' Route from {self.start_location} to {self.end_location} starting on {self.start_date_time}"
 
 
 class RouteSegment(models.Model):

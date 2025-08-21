@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Help and FAQs - PathPilot</title>
+  <link rel="stylesheet" href="{% static 'logIn.css' %}">
+
+</head>
+
+<body>
+
+  <header>
+    <img src="{% static 'assets/logo.png' %}" alt="PathPilot Logo" style="height:60px; vertical-align: middle;">
+    <span class="company-slogan">YOUR JOURNEY, OUR GUIDE</span>
+  </header>
+
+  <h1>Help and FAQs</h1>
+
+  <a href="/">
+    <button>← Back to Home</button>
+  </a>
+
+  <main>
+    <section class="video-wrapper">
+      <h2>Watch the help video below</h2>
+      <iframe src="https://www.youtube.com/embed/hrPtK5D5yn4" title="Journey plan walkthrough" width="560" height="315"
+        allowfullscreen>
+      </iframe>
+    </section>
+
+    <section class="FAQ-section">
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq-item">
+        <button class="faq-question">How do I plan a journey?</button>
+        <p class="faq-answer" style="display:none;">
+          Enter your starting point and destination in the search fields. Then select your preferred travel time. The
+          planner will generate the best routes for you.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Can I see real-time bus and train updates?</button>
+        <p class="faq-answer" style="display:none;">
+          No, but it will notify you if you are travelling during peak hours.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Do I need an account to use the planner?</button>
+        <p class="faq-answer" style="display:none;">
+          No account is required to plan a journey. However, if you create one, you can save frequent trips and receive
+          personalized notifications.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Can I use the planner on my phone?</button>
+        <p class="faq-answer" style="display:none;">
+          Yes, the website is fully mobile-friendly.
+        </p>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+
+    const questions = document.querySelectorAll('.faq-question');
+
+    questions.forEach(question => {
+      question.addEventListener('click', () => {
+        const answer = question.nextElementSibling;
+        const isVisible = answer.style.display === 'block';
+        answer.style.display = isVisible ? 'none' : 'block';
+      });
+    });
+  </script>
+
+</body>
+
+<footer>
+  <p>&copy; 2025 PathPilot
+  <p>
+  <p>Email: PathPilot@gmail.com
+  <p>
+  <p>Contact No: +27747618921</p>
+
+</html>

@@ -9,5 +9,25 @@ from django.http import JsonResponse, HttpResponse
 # journey_planner.urls ——> planner.urls ——> path('plan/') ——> views.plan_view
 
 
-def plan_view(request):
-    return render(request, "1.html")
+def tailwind_view(request):
+    return render(request, "tailwindcss-test.html")
+
+
+def home_view(request):
+    return render(request, "homePage.html")
+
+
+def journey_view(request):
+    return render(request, "journey.html")
+
+
+def faq_view(request):
+    return render(request, "faq.html")
+
+
+def user_login_view(request):
+    return render(request, "logIn.html")
+
+
+def user_signup_view(request):
+    return render(request, "signUp.html")

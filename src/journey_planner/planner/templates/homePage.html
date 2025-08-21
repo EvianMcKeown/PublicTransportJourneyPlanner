@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="{% static 'homePage.css' %}">
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtg3qdyC38nfG_yf0oswBFiRepezkQI2I&callback=initMap"
+        async defer></script>
+</head>
+
+<body>
+
+    <header>
+        <img src="{% static 'assets/logo.png' %}" alt="PathPilot Logo" style="height:60px; vertical-align: middle;">
+        <span class="company-slogan">YOUR JOURNEY, OUR GUIDE</span>
+
+        <nav>
+            <a href="journey">Saved Routes </a> |
+            <a href="faq">FAQ </a> |
+            <a href="login">Login </a>
+        </nav>
+    </header>
+
+
+    <div class="content-wrapper">
+
+        <div class="main-content">
+            <div id="map"></div>
+            <div class="form-container">
+                <form action="homePage" method="get">
+                    <input type="text" id="start" name="start" placeholder="Enter your starting point" required><br><br>
+                    <input type="text" id="end" name="end" placeholder="Enter your Destination" required><br><br>
+                    <button type="submit">Find Routes</button>
+                </form>
+            </div>
+
+
+        </div>
+
+
+        <div class="sidebar">
+            <h2>Preferences</h2>
+
+            <form class="preferences-form">
+                <label>
+                    <input type="checkbox" name="minWalking">
+                    Minimise walking
+                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="minStops">
+                    Minimise stops
+                </label>
+            </form>
+            <button type="submit">Save Current Route</button>
+        </div>
+    </div>
+
+
+    <footer>
+        <p>&copy; 2025 PathPilot</p>
+        <p>Email: PathPilot@gmail.com</p>
+        <p>Contact No: +27747618921</p>
+    </footer>
+
+
+    <script>
+        function initMap() {
+            const center = { lat: -33.9249, lng: 18.4241 };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: center,
+            });
+
+            new google.maps.Marker({
+                position: center,
+                map: map,
+                title: "Center Point",
+            });
+        }
+    </script>
+</body>
+
+</html>

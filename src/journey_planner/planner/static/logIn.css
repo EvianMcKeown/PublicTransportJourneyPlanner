@@ -1,0 +1,110 @@
+
+header {
+  width: 100%;
+  background-color: #001f4d; /* navy blue */
+  color: white;
+  padding: 15px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+header .company-slogan {
+  font-size: 16px;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+/* Background Video */
+#bgVideo {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -1;
+  object-fit: cover;
+  opacity: 0.85;
+}
+
+
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #d3d3d3; /* light blue */
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+
+h2 {
+  color: #001f4d; /* dark blue */
+  text-align: center;
+  margin-top: 50px;
+}
+
+/* Form */
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+
+input[type="text"], input[type="password"] {
+  width: 200px;      
+  padding: 8px;
+  margin: 5px 0;
+  border: 1px solid #001f4d; /* dark blue border */
+  border-radius: 5px;
+}
+
+/* Button */
+button {
+  width: 120px;
+  padding: 10px;
+  background-color: #001f4d; /* dark blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #003366;
+}
+
+
+p {
+  margin-top: 15px;
+  text-align: center;
+}
+
+a {
+  color: #001f4d;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+footer {
+  margin-top: auto;
+  width: 100%;
+  background-color: #000000; /* black footer */
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  position: relative;
+}

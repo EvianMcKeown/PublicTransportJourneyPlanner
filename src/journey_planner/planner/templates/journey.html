@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journey Planner</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtg3qdyC38nfG_yf0oswBFiRepezkQI2I&callback=initMap"
+    async defer></script>
+
+</head>
+
+<body>
+  <header>
+    <img src="{% static 'assets/logo.png' %}" alt="PathPilot Logo" style="height:60px; vertical-align: middle;">
+    <span class="company-slogan">YOUR JOURNEY, OUR GUIDE</span>
+
+
+  </header>
+  <a href="/">
+    <button>← Back to Home</button>
+  </a>
+
+  <div class="journey-planner">
+
+    <div class="sidebar">
+      <h2>Routes</h2>
+      <div class="route-item">
+        <button class="Route-Button">Route 1</button>
+        <p>15:27 – Depart from City of Cape Town</p>
+
+        <p>Walk 223m (~3 minutes)</p>
+
+        <p>15:31 – Civic Centre Station</p>
+
+        <p>Board Bus 105</p>
+
+        <p>Travel 15 stops (~23 minutes)</p>
+
+        <p>15:54 – Tramway Station
+        <p></p>
+
+        <p>Transfer to Bus 109</p>
+
+        <p>Continue on Bus 109 toward Clifton</p>
+
+        <p>16:02 – Arrive in Clifton</p>
+      </div>
+      <div class="route-item">
+        <button class="Route-Button">Route 2</button>
+        <p>14:10 – Depart from City of Cape Town
+
+        <p>Walk 200m (~2 minutes)
+
+        <p>14:12 – Civic Centre Station</p>
+
+        <p>Board Bus 104</p>
+
+        <p>Travel 12 stops (~20 minutes)</p>
+
+        <p>14:32 – Three Anchor Bay Station</p>
+
+        <p>Transfer to Bus 108</p>
+
+        <p>14:35 – Depart on Bus 108</p>
+
+        <p>Travel 3 stops (~7 minutes)</p>
+
+        <p>14:42 – Arrive at Sea Point Pavilion</p>
+      </div>
+    </div>
+
+
+    <div class="map-container" id="map"></div>
+  </div>
+
+  <script>
+    function initMap() {
+      const center = { lat: -33.9249, lng: 18.4241 };
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 13,
+        center: center,
+      });
+
+
+      const routes = [
+        { name: "Route 1", lat: -33.925, lng: 18.425 },
+        { name: "Route 2", lat: -33.926, lng: 18.423 },
+      ];
+
+      routes.forEach(route => {
+        new google.maps.Marker({
+          position: { lat: route.lat, lng: route.lng },
+          map,
+          title: route.name,
+        });
+      });
+    }
+  </script>
+  <footer>
+    <p>&copy; 2025 PathPilot</p>
+    <p>Email: PathPilot@gmail.com</p>
+    <p>Contact No: +27747618921</p>
+  </footer>
+</body>
+
+</html>

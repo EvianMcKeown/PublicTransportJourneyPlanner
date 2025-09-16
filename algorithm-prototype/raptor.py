@@ -2,7 +2,7 @@
 # import multiprocessing as mp
 from dataclasses import dataclass
 import sys
-from typing import List, Dict, Tuple
+from typing import List, Dict, Optional, Tuple
 from math import radians, cos, sin, asin, sqrt  # Haversine formula
 
 # Value used as INFINITY
@@ -14,8 +14,14 @@ class Stop:
     """each stop corresponds to a distinct location,
     where a commuter can board or get off a vehicle (train, bus, etc.)"""
 
-    id: int
+    id: str
     mode: int  # 1=train, 2=MyCiti, ...
+    lat: float
+    lon: float
+
+    earliest_arrival: Dict[int, int] = {}  # round -> time
+    # earliest arrival time per round, updated in algo
+    # can alternatively store earliest arrival time as a two dimensional array
 
 
 @dataclass
@@ -24,12 +30,12 @@ class Trip:
     makes on a line (route) - at each stop it may pick up or drop-off passengers
     """
 
-    stops: List[Stop]
-    departures: List[int]  # departure times at corresponding stops
-
-    @property
-    def mode(self) -> int:
-        return self.stops[0].mode if self.stops else -1
+    id: str
+    # stops: List[Stop]
+    # route: "Route"
+    departure_times: List[
+        int
+    ]  # departure times at corresponding stops (from associated route)
 
 
 @dataclass
@@ -37,70 +43,28 @@ class Route:
     """ordered list of stops and the trips coinciding with them. No time info here.
     TODO maybe make a single list contain all this for a DOD approach?"""
 
-    id: int
+    id: str
     stops: List[Stop]  # can remove duplication of stops between routes and trips later
-    trips: List[Trip]
+    trips: List[Trip] = []
+
+    @property
+    def mode(self) -> int:
+        return self.stops[0].mode if self.stops else -1
 
     def add_trip(self, trip: Trip):
+        # Ensure trip matches stop count
+        # TODO check that no duplicate trips
+        assert len(trip.departure_times) == len(self.stops)
         self.trips.append(trip)
 
 
-def raptor_algo(
-    source: Stop,
-    destination: Stop,
-    departure_time: int,
-    routes: List[Route],
-    max_rounds: int = 10,
-) -> Dict[int, int]:
-    """Compute earliest arrival times using RAPTOR - Round bAsed Public Transit Optimised Router.
+@dataclass
+class Transfer:
+    """TODO"""
 
-    Args:
-        source (Stop): origin Stop
-        destination (Stop): destination Stop
-        departure_time (int): starting time in seconds
-        routes (List[Route]): list of Route objects - where each Route is an ordered list of stops and the trips coinciding with them.
-        max_rounds (int, optional): maximum rounds to compute. Defaults to 10.
-
-    Returns:
-        TODO
-    """
-
-    # DOD: routes = [[num_trips, num_stops, [stop0, stop1, ..., stop_k], [trip0, trip1, ..., trip_k]], ...]
-
-    num_stops: int = max(s.id for r in routes for s in r.stops) + 1
-
-    # labels to track best know arrival time at each stop
-    best = [INF] * num_stops
-    print(best)
-
-    # route_
-    # earliest_arrival[i][p]
-    # initialise earliest known arrival time at p with up to i trips to inf
-    # for i in stops:
-    #    pass
-    # then we set earliest know arrival time at the source stop with 0 trips equal to the departure time
-
-    return {0: 0}
-
-
-if __name__ == "__main__":
-    source = Stop(0, 1)
-    destination = Stop(1, 1)
-    start_time = 10
-
-    example_list_stops = [Stop(0, 1), Stop(1, 1)]
-    example_departures = [15, 30]
-    example_arrivals = [10, 25]
-
-    example_route: List[Route] = [
-        Route(
-            0,
-            example_list_stops,
-            [Trip(example_list_stops, example_departures)],
-        )
-    ]
-
-    raptor_algo(source, destination, start_time, example_route)
+    from_stop: Stop
+    to_stop: Stop
+    walking_time: int  # time in minutes
 
 
 class helper_functions:
@@ -157,3 +121,70 @@ class helper_functions:
         b = 2 * 2367 * 1000 * asin(sqrt(a))  # meters
 
         return True if b <= dist else False
+
+
+def raptor_algo(
+    source: Stop,
+    destination: Stop,
+    departure_time: int,
+    routes: List[Route],
+    max_rounds: int = 10,
+) -> Dict[int, int]:
+    """Compute earliest arrival times using RAPTOR - Round bAsed Public Transit Optimised Router.
+
+    Args:
+        source (Stop): origin Stop
+        destination (Stop): destination Stop
+        departure_time (int): starting time in seconds
+        routes (List[Route]): list of Route objects - where each Route is an ordered list of stops and the trips coinciding with them.
+        max_rounds (int, optional): maximum rounds to compute. Defaults to 10.
+
+    Returns:
+        TODO
+    """
+
+    # DOD: routes = [[num_trips, num_stops, [stop0, stop1, ..., stop_k], [trip0, trip1, ..., trip_k]], ...]
+
+    num_stops: int = max(s.id for r in routes for s in r.stops) + 1
+
+    # labels to track best know arrival time at each stop
+    best = [INF] * num_stops
+    print(best)
+
+    # route_
+    # earliest_arrival[i][p]
+    # initialise earliest known arrival time at p with up to i trips to inf
+    # for i in stops:
+    #    pass
+    # then we set earliest know arrival time at the source stop with 0 trips equal to the departure time
+
+    return {0: 0}
+
+
+if __name__ == "__main__":
+
+    # Example Stops
+    a = Stop("Greenpoint", 2, -33.918, 18.423)
+    b = Stop("Gardens", 2, -33.935, 18.413)
+    c = Stop("Observatory", 2, -34.05, 18.35)
+
+    stops = {s.id: s for s in [a, b, c]}
+    # stops = [a, b, c]
+
+    # Example Routes
+    route_example = Route("A", [a, b, c])
+    route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
+    route_example.add_trip(Trip("A-2", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
+
+    routes = {route_example.id: route_example}
+
+    # Transfers
+    # determine if walkable
+    transfers = []
+    for s1 in stops.values():
+        for s2 in stops.values():
+            if helper_functions.walkable(s1.lat, s1.lon, s2.lat, s1.lon, 5000):
+                transfers.append(Transfer(s1, s2, 10))
+                # TODO calculate time to walk by Haversine
+
+    raptor_algo()

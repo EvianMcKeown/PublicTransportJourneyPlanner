@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import sys
 from typing import List, Dict, Tuple
+from math import radians, cos, sin, asin, sqrt  # Haversine formula
 
 # Value used as INFINITY
 INF: int = sys.maxsize
@@ -14,18 +15,17 @@ class Stop:
     where a commuter can board or get off a vehicle (train, bus, etc.)"""
 
     id: int
-    mode: int  # 1=train, 2=myciti, ...
+    mode: int  # 1=train, 2=MyCiti, ...
 
 
 @dataclass
 class Trip:
-    """a sequence of stops a specific vehicle (train, bus, etc.)
+    """a time dependant sequence of stops a specific vehicle (train, bus, etc.)
     makes on a line (route) - at each stop it may pick up or drop-off passengers
     """
 
     stops: List[Stop]
-    departures: List[int]  # departure times aligned with stops
-    arrivals: List[int]  # arrival times aligned with stops
+    departures: List[int]  # departure times at corresponding stops
 
     @property
     def mode(self) -> int:
@@ -34,13 +34,11 @@ class Trip:
 
 @dataclass
 class Route:
-    """ordered list of stops and the trips coinciding with them
+    """ordered list of stops and the trips coinciding with them. No time info here.
     TODO maybe make a single list contain all this for a DOD approach?"""
 
     id: int
-    stops: List[
-        Stop
-    ]  # can remove duplication of stops between routes and trips later
+    stops: List[Stop]  # can remove duplication of stops between routes and trips later
     trips: List[Trip]
 
     def add_trip(self, trip: Trip):
@@ -77,7 +75,7 @@ def raptor_algo(
 
     # route_
     # earliest_arrival[i][p]
-    # initailise earliest know arrival time at p with up to i trips to inf
+    # initialise earliest known arrival time at p with up to i trips to inf
     # for i in stops:
     #    pass
     # then we set earliest know arrival time at the source stop with 0 trips equal to the departure time
@@ -98,7 +96,7 @@ if __name__ == "__main__":
         Route(
             0,
             example_list_stops,
-            [Trip(example_list_stops, example_departures, example_arrivals)],
+            [Trip(example_list_stops, example_departures)],
         )
     ]
 
@@ -127,3 +125,35 @@ class helper_functions:
     @staticmethod
     def stops_same_mode(stops) -> bool:
         return True
+
+    @staticmethod
+    def walkable(
+        lat_a: float, lon_a: float, lat_b: float, lon_b: float, dist=500
+    ) -> bool:
+        """
+        Determines if two positions, a and b, are less than some maximum distance from each other.
+        If so, then they can be used to move from one route to another.
+
+        :param a_lat: latitude of position a
+        :type a_lat: float
+        :param a_lon: longitude of position a
+        :type a_lon: float
+        :param b_lat: latitude of position b
+        :type b_lat: float
+        :param b_lon: longitude of position b
+        :type b_lon: float
+        :return: If the positions are walkable - return True. Otherwise, return False.
+        :rtype: bool
+        """
+
+        # Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
+
+        # degree to radian
+        lat_a, lon_a, lat_b, lon_b = map(radians, [lat_a, lon_a, lat_b, lon_b])
+        # get deltas
+        delta_lat = lat_a - lat_b  # y
+        delta_lon = lon_a - lon_b  # x
+        a = sin(delta_lat / 2) ** 2 + cos(lat_a) * cos(lat_b) * sin(delta_lon / 2) ** 2
+        b = 2 * 2367 * 1000 * asin(sqrt(a))  # meters
+
+        return True if b <= dist else False

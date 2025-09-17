@@ -1,6 +1,7 @@
 ### version 1
 # import multiprocessing as mp
 from dataclasses import dataclass
+from re import I
 import sys
 from typing import List, Dict, Optional, Tuple
 from math import radians, cos, sin, asin, sqrt  # Haversine formula
@@ -83,12 +84,37 @@ class helper_functions:
         return -1
 
     @staticmethod
-    def check_dep_arr_times(departure_time: int, arrival_time: int) -> bool:
-        return True if (arrival_time <= departure_time) else False
+    def stops_same_mode(stops: Dict[str, Stop]) -> bool:
+        s0 = next(iter(stops.values()))
+        for s in stops.values():
+            if s0.mode != s.mode:
+                return False
+        return True
 
     @staticmethod
-    def stops_same_mode(stops) -> bool:
-        return True
+    def haversine(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:
+        """Return distance in meters between two coordinates using Haversine formula with mean earth radius.
+            Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
+
+        Args:
+            lat_a (float): latitude of coordinate a
+            lon_a (float): longitude of coordinate a
+            lat_b (float): latitude of coordinate b
+            lon_b (float): longitude of coordinate b
+
+        Returns:
+            float: distance in meters
+        """
+
+        # degree to radian
+        lat_a, lon_a, lat_b, lon_b = map(radians, [lat_a, lon_a, lat_b, lon_b])
+        # get deltas
+        delta_lat = lat_a - lat_b  # y
+        delta_lon = lon_a - lon_b  # x
+        a = sin(delta_lat / 2) ** 2 + cos(lat_a) * cos(lat_b) * sin(delta_lon / 2) ** 2
+        b = 2 * 2371 * 1000 * asin(sqrt(a))  # meters
+
+        return b
 
     @staticmethod
     def walkable(
@@ -98,67 +124,72 @@ class helper_functions:
         Determines if two positions, a and b, are less than some maximum distance from each other.
         If so, then they can be used to move from one route to another.
 
-        :param a_lat: latitude of position a
-        :type a_lat: float
-        :param a_lon: longitude of position a
-        :type a_lon: float
-        :param b_lat: latitude of position b
-        :type b_lat: float
-        :param b_lon: longitude of position b
-        :type b_lon: float
-        :return: If the positions are walkable - return True. Otherwise, return False.
-        :rtype: bool
+        Args:
+            lat_a (float): latitude of coordinate a
+            lon_a (float): longitude of coordinate a
+            lat_b (float): latitude of coordinate b
+            lon_b (float): longitude of coordinate b
+            dist (int): maximum walking distance in meters
+
+        Returns:
+            boolean: walkable
         """
 
         # Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
 
-        # degree to radian
-        lat_a, lon_a, lat_b, lon_b = map(radians, [lat_a, lon_a, lat_b, lon_b])
-        # get deltas
-        delta_lat = lat_a - lat_b  # y
-        delta_lon = lon_a - lon_b  # x
-        a = sin(delta_lat / 2) ** 2 + cos(lat_a) * cos(lat_b) * sin(delta_lon / 2) ** 2
-        b = 2 * 2367 * 1000 * asin(sqrt(a))  # meters
-
-        return True if b <= dist else False
+        return helper_functions.haversine(lat_a, lon_a, lat_b, lon_b) <= dist
 
 
 def raptor_algo(
-    source: Stop,
-    destination: Stop,
+    stops: Dict[str, Stop],
+    routes: Dict[str, Route],
+    transfers: List[Transfer],
+    source_id: str,
+    target_id: str,
     departure_time: int,
-    routes: List[Route],
     max_rounds: int = 10,
-) -> Dict[int, int]:
-    """Compute earliest arrival times using RAPTOR - Round bAsed Public Transit Optimised Router.
+) -> Dict[str, [int]]:
+    """RAPTOR - Round bAsed Public Transit Optimised Router.
+
+    v1: unoptimised
 
     Args:
-        source (Stop): origin Stop
-        destination (Stop): destination Stop
-        departure_time (int): starting time in seconds
-        routes (List[Route]): list of Route objects - where each Route is an ordered list of stops and the trips coinciding with them.
-        max_rounds (int, optional): maximum rounds to compute. Defaults to 10.
+        TODO
 
     Returns:
         TODO
     """
 
-    # DOD: routes = [[num_trips, num_stops, [stop0, stop1, ..., stop_k], [trip0, trip1, ..., trip_k]], ...]
+    # build index mapping for array storage
+    stop_ids = list(stops.keys())
+    id_to_idx: Dict[str, int] = {sid: i for i, sid in enumerate(stop_ids)}
+    idx_to_id: Dict[int, str] = {i: sid for sid, i in id_to_idx.items()}
+    n = len(stops.keys())
 
-    num_stops: int = max(s.id for r in routes for s in r.stops) + 1
+    # adjacency lists for transfers (indices) - walking time from stop u to v
+    transfer_adj: List[List[Tuple[int, int]]] = [[] for _ in range(n)]
+    for t in transfers:
+        u = id_to_idx[t.from_stop.id]
+        v = id_to_idx[t.to_stop.id]
+        transfer_adj[u].append((v, t.walking_time))
 
-    # labels to track best know arrival time at each stop
-    best = [INF] * num_stops
-    print(best)
+    # compute route-stop indices
+    routes_stop_indices: Dict[str, List[int]] = {}
+    for rid, route in routes.items():
+        routes_stop_indices[rid] = [id_to_idx[s.id] for s in route.stops]
 
-    # route_
-    # earliest_arrival[i][p]
-    # initialise earliest known arrival time at p with up to i trips to inf
-    # for i in stops:
-    #    pass
-    # then we set earliest know arrival time at the source stop with 0 trips equal to the departure time
+    # earliest arrival time for each stop over all rounds
+    best = [INF] * n
+    prev = [INF] * n
+    cur = [INF] * n
 
-    return {0: 0}
+    # initialise
+    if source_id not in id_to_idx:
+        raise ValueError("Origin not a valid Stop.")
+    source__idx
+
+    # set source stop earliest-arrival time to departure time
+    stops.update()
 
 
 if __name__ == "__main__":

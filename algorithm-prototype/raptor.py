@@ -5,6 +5,7 @@ from email.policy import default
 import queue
 from re import I
 import sys
+from tracemalloc import stop
 from typing import List, Dict, Optional, Tuple
 from math import ceil, radians, cos, sin, asin, sqrt  # Haversine formula
 
@@ -111,10 +112,10 @@ class helper_functions:
         # degree to radian
         lat_a, lon_a, lat_b, lon_b = map(radians, [lat_a, lon_a, lat_b, lon_b])
         # get deltas
-        delta_lat = lat_a - lat_b  # y
-        delta_lon = lon_a - lon_b  # x
-        a = sin(delta_lat / 2) ** 2 + cos(lat_a) * cos(lat_b) * sin(delta_lon / 2) ** 2
-        b = 2 * 2371 * 1000 * asin(sqrt(a))  # meters
+        delta_lat = lat_b - lat_a  # y
+        delta_lon = lon_b - lon_a  # x
+        a = sin(delta_lat / 2) ** 2 + sin(delta_lon / 2) ** 2 * cos(lat_a) * cos(lat_b)
+        b = 2 * 6371 * 1000 * asin(sqrt(a))  # meters
 
         return b
 
@@ -248,11 +249,15 @@ def raptor_algo(
                     stop_idx2 = stop_indices[pos2]
                     trip_time = trip.departure_times[pos2]
                     if trip_time < cur[stop_idx2]:
-                        best[stop_idx2] = trip_time
-                    if not marked[stop_idx2]:
-                        marked[stop_idx2] = True
-                        marked_list.append(stop_idx2)
-                        improved = True
+                        if stop_idx2 == source_idx and trip_time > departure_time:
+                            # Don't overwrite source with later time
+                            continue
+                        cur[stop_idx2] = trip_time
+                        best[stop_idx2] = min(best[stop_idx2], trip_time)
+                        if not marked[stop_idx2]:
+                            marked[stop_idx2] = True
+                            marked_list.append(stop_idx2)
+                            improved = True
 
         # 3: Look at foot-paths (transfers) — since we have no chained walks and
         # we are using a fixed distance based formula for walking time, all we
@@ -265,6 +270,7 @@ def raptor_algo(
             for v, walk_time in transfer_adj[p]:
                 new_arrival = arr_p + walk_time
                 if new_arrival < cur[v]:
+                    cur[v] = new_arrival
                     best[v] = min(best[v], new_arrival)
                     if not marked[v]:
                         marked[v] = True
@@ -277,6 +283,7 @@ def raptor_algo(
         prev = cur[:]  # shallow copy list (values, not references)
         cur = [INF] * n
 
+    best[source_idx] = departure_time  # reset source to departure time
     result: Dict[str, int] = {}
     for i, sid in idx_to_id.items():
         result[sid] = best[i]
@@ -285,7 +292,7 @@ def raptor_algo(
 
 
 if __name__ == "__main__":
-    MAX_WALK_DIST = 1000  # maximum walkable distance in meters
+    MAX_WALK_DIST = 3000  # maximum walkable distance in meters
     WALKING_SPEED = 5 * 1000 / 60
     MIN_TRANSFER_TIME = 2
 
@@ -311,6 +318,7 @@ if __name__ == "__main__":
         for s2 in stops.values():
             if s1.id != s2.id:
                 distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
+                # print(distance)
                 if distance <= MAX_WALK_DIST:
                     walk_time_minutes = max(
                         MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
@@ -320,6 +328,8 @@ if __name__ == "__main__":
     result = raptor_algo(
         stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
     )
+
+    # print(transfers)
 
     print("Earliest arrivals (mins since Monday 00:00):")
     for sid, t in result.items():

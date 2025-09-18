@@ -1,10 +1,11 @@
 ### version 1
 # import multiprocessing as mp
 from dataclasses import dataclass
+import queue
 from re import I
 import sys
 from typing import List, Dict, Optional, Tuple
-from math import radians, cos, sin, asin, sqrt  # Haversine formula
+from math import ceil, radians, cos, sin, asin, sqrt  # Haversine formula
 
 # Value used as INFINITY
 INF: int = sys.maxsize
@@ -93,14 +94,14 @@ class helper_functions:
 
     @staticmethod
     def haversine(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:
-        """Return distance in meters between two coordinates using Haversine formula with mean earth radius.
+        """Return distance in meters between two coordinates using Haversine
+            formula with mean earth radius.
             Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
 
         Args:
-            lat_a (float): latitude of coordinate a
-            lon_a (float): longitude of coordinate a
-            lat_b (float): latitude of coordinate b
-            lon_b (float): longitude of coordinate b
+            lat_a (float): latitude of coordinate a lon_a (float): longitude of
+            coordinate a lat_b (float): latitude of coordinate b lon_b (float):
+            longitude of coordinate b
 
         Returns:
             float: distance in meters
@@ -121,15 +122,15 @@ class helper_functions:
         lat_a: float, lon_a: float, lat_b: float, lon_b: float, dist=500
     ) -> bool:
         """
-        Determines if two positions, a and b, are less than some maximum distance from each other.
-        If so, then they can be used to move from one route to another.
+        Determines if two positions, a and b, are less than some maximum
+        distance from each other. If so, then they can be used to move from one
+        route to another.
 
         Args:
-            lat_a (float): latitude of coordinate a
-            lon_a (float): longitude of coordinate a
-            lat_b (float): latitude of coordinate b
-            lon_b (float): longitude of coordinate b
-            dist (int): maximum walking distance in meters
+            lat_a (float): latitude of coordinate a lon_a (float): longitude of
+            coordinate a lat_b (float): latitude of coordinate b lon_b (float):
+            longitude of coordinate b dist (int): maximum walking distance in
+            meters
 
         Returns:
             boolean: walkable
@@ -148,7 +149,7 @@ def raptor_algo(
     target_id: str,
     departure_time: int,
     max_rounds: int = 10,
-) -> Dict[str, [int]]:
+) -> Dict[str, int]:
     """RAPTOR - Round bAsed Public Transit Optimised Router.
 
     v1: unoptimised
@@ -199,8 +200,93 @@ def raptor_algo(
     for k in range(1, max_rounds + 1):
         improved = False
 
+        # 1: Accumulate routes serving marked stops from previous round
+        Q: List[Tuple[str, int]] = []  # (route_id, first_marked_stop_index_in_route)
+        for rid, route in routes.items():
+            stop_indices = routes_stop_indices[rid]
+            # find first marked index in the route
+            first_marked_pos = None
+            for pos, stop_idx in enumerate(stop_indices):
+                if marked[stop_idx]:
+                    first_marked_pos = pos
+                    break
+                if first_marked_pos is not None:
+                    Q.append((rid, first_marked_pos))
+
+        # reset marked for this round — will mark as we improve earliest times
+        marked = [False] * n
+        marked_list = []
+
+        # 2: Traverse each route
+        for rid, start_pos in Q:
+            cur_route = routes[rid]
+            stop_indices = routes_stop_indices[rid]
+            num_stops_in_route = len(stop_indices)
+
+            for trip in cur_route.trips:
+                # check whether we can board the trip (on this route) at any stop
+                # Try to board at earliest possible stop
+                boarded_at = None
+                for pos in range(start_pos, num_stops_in_route):
+                    stop_idx = stop_indices[pos]
+                    arr_prev = prev[stop_idx]
+                    if arr_prev == INF:
+                        continue  # if we cannot reach stop, then ignore
+                    trip_departure = trip.departure_times[pos]
+
+                    if trip_departure >= arr_prev:
+                        boarded_at = pos
+                        break  # board at first possible stop, and stop checking
+
+                if boarded_at is None:
+                    # can't use this trip from any marked stop
+                    continue
+
+                # move along trip from boarded_at stop
+                for pos2 in range(boarded_at, num_stops_in_route):
+                    stop_idx2 = stop_indices[pos2]
+                    trip_time = trip.departure_times[pos2]
+                    if trip_time < cur[stop_idx2]:
+                        best[stop_idx2] = trip_time
+                    if not marked[stop_idx2]:
+                        marked[stop_idx2] = True
+                        marked_list.append(stop_idx2)
+                        improved = True
+
+        # 3: Look at foot-paths (transfers) — since we have no chained walks and
+        # we are using a fixed distance based formula for walking time, all we
+        # have to do is 'walk' through (pardon the pun) each transfer.
+        for p in marked_list:
+            arr_p = cur[p]
+            if arr_p == INF:
+                continue
+
+            for v, walk_time in transfer_adj[p]:
+                new_arrival = arr_p + walk_time
+                if new_arrival < cur[v]:
+                    best[v] = min(best[v], new_arrival)
+                    if not marked[v]:
+                        marked[v] = True
+                        marked_list.append(v)
+                        improved = True
+
+        if not improved:
+            break
+
+        prev = cur[:]  # shallow copy list (values, not references)
+        cur = [INF] * n
+
+    result: Dict[str, int] = {}
+    for i, sid in idx_to_id.items():
+        result[sid] = best[i]
+
+    return result
+
 
 if __name__ == "__main__":
+    MAX_WALK_DIST = 1000  # maximum walkable distance in meters
+    WALKING_SPEED = 5 * 1000 / 60
+    MIN_TRANSFER_TIME = 2
 
     # Example Stops
     a = Stop("Greenpoint", 2, -33.918, 18.423)
@@ -213,17 +299,27 @@ if __name__ == "__main__":
     # Example Routes
     route_example = Route("A", [a, b, c])
     route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
-    route_example.add_trip(Trip("A-2", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
+    route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
 
     routes = {route_example.id: route_example}
 
     # Transfers
     # determine if walkable
-    transfers = []
+    transfers: List[Transfer] = []
     for s1 in stops.values():
         for s2 in stops.values():
-            if helper_functions.walkable(s1.lat, s1.lon, s2.lat, s1.lon, 5000):
-                transfers.append(Transfer(s1, s2, 10))
-                # TODO calculate time to walk by Haversine
+            if s1.id != s2.id:
+                distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
+                if distance <= MAX_WALK_DIST:
+                    walk_time_minutes = max(
+                        MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
+                    )
+                    transfers.append(Transfer(s1, s2, walk_time_minutes))
 
-    raptor_algo()
+    result = raptor_algo(
+        stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
+    )
+
+    print("Earliest arrivals (mins since Monday 00:00):")
+    for sid, t in result.items():
+        print(f"{sid}: {t}")

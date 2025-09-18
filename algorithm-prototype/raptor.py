@@ -186,10 +186,18 @@ def raptor_algo(
     # initialise
     if source_id not in id_to_idx:
         raise ValueError("Origin not a valid Stop.")
-    source__idx
+    source_idx = id_to_idx[source_id]
+    prev[source_idx] = departure_time
+    cur[source_idx] = departure_time
 
-    # set source stop earliest-arrival time to departure time
-    stops.update()
+    # marked stops: those improved in the last round (init to only source)
+    marked = [False] * n
+    marked[source_idx] = True
+    marked_list = [source_idx]
+
+    # main round
+    for k in range(1, max_rounds + 1):
+        improved = False
 
 
 if __name__ == "__main__":

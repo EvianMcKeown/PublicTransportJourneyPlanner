@@ -1,6 +1,7 @@
 ### version 1
 # import multiprocessing as mp
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from email.policy import default
 import queue
 from re import I
 import sys
@@ -21,7 +22,7 @@ class Stop:
     lat: float
     lon: float
 
-    earliest_arrival: Dict[int, int] = {}  # round -> time
+    earliest_arrival: Dict[int, int] = field(default_factory=dict)  # round -> time
     # earliest arrival time per round, updated in algo
     # can alternatively store earliest arrival time as a two dimensional array
 
@@ -47,7 +48,7 @@ class Route:
 
     id: str
     stops: List[Stop]  # can remove duplication of stops between routes and trips later
-    trips: List[Trip] = []
+    trips: List[Trip] = field(default_factory=list)
 
     @property
     def mode(self) -> int:
@@ -210,8 +211,8 @@ def raptor_algo(
                 if marked[stop_idx]:
                     first_marked_pos = pos
                     break
-                if first_marked_pos is not None:
-                    Q.append((rid, first_marked_pos))
+            if first_marked_pos is not None:
+                Q.append((rid, first_marked_pos))
 
         # reset marked for this round — will mark as we improve earliest times
         marked = [False] * n

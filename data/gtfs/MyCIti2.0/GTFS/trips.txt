@@ -1,0 +1,273 @@
+route_id,service_id,trip_id,trip_headsign,direction_id
+101,0,T0001,Civic Centre,0
+101,1,T0002,Civic Centre,0
+101,2,T0003,Civic Centre,0
+101,0,T0004,Vredehoek,1
+101,1,T0005,Vredehoek,1
+101,2,T0006,Vredehoek,1
+
+102,0,T0007,Civic Centre,0
+102,1,T0008,Civic Centre,0
+102,2,T0009,Civic Centre,0
+102,0,T0010,Salt River,1
+102,1,T0011,Salt River,1
+102,2,T0012,Salt River,1
+
+103,0,T0013,Civic Centre,0
+103,1,T0014,Civic Centre,0
+103,2,T0015,Civic Centre,0
+103,0,T0016,Oranjezicht,1
+103,1,T0017,Oranjezicht,1
+103,2,T0018,Oranjezicht,1
+
+104,0,T0019,Civic Centre,0
+104,1,T0020,Civic Centre,0
+104,2,T0021,Civic Centre,0
+104,0,T0022,Sea Point,1
+104,1,T0023,Sea Point,1
+104,2,T0024,Sea Point,1
+
+105,0,T0025,Civic Centre,0
+105,1,T0026,Civic Centre,0
+105,2,T0027,Civic Centre,0
+105,0,T0028,Sea Point,1
+105,1,T0029,Sea Point,1
+105,2,T0030,Sea Point,1
+
+106,0,T0031,Civic Centre,0
+106,1,T0032,Civic Centre,0
+106,2,T0033,Civic Centre,0
+106,0,T0034,Camps Bay,1
+106,1,T0035,Camps Bay,1
+106,2,T0036,Camps Bay,1
+
+107,0,T0037,Civic Centre,0
+107,1,T0038,Civic Centre,0
+107,2,T0039,Civic Centre,0
+107,0,T0040,Camps Bay,1
+107,1,T0041,Camps Bay,1
+107,2,T0042,Camps Bay,1
+
+108,0,T0043,Adderley,0
+108,0,T0044,Hangberg,1
+
+109,0,T0045,Adderley,0
+109,1,T0046,Adderley,0
+109,2,T0047,Adderley,0
+109,0,T0048,Hout Bay,1
+109,1,T0049,Hout Bay,1
+109,2,T0050,Hout Bay,1
+
+111,0,T0051,Civic Centre,0
+111,1,T0052,Civic Centre,0
+111,2,T0053,Civic Centre,0
+111,0,T0054,Vredehoek,1
+111,1,T0055,Vredehoek,1
+111,2,T0056,Vredehoek,1
+
+113,0,T0057,Adderley,0
+113,1,T0058,Adderley,0
+113,2,T0059,Adderley,0
+113,0,T0060,Upper Kloof St,1
+113,1,T0061,Upper Kloof St,1
+113,2,T0062,Upper Kloof St,1
+
+115,0,T0063,Grand Parade,0
+
+118,0,T0064,Adderley,0
+118,1,T0065,Adderley,0
+118,2,T0066,Adderley,0
+118,0,T0067,Bayview,1
+118,1,T0068,Bayview,1
+118,2,T0069,Bayview,1
+
+213,0,T0070,Blaauwberg Hospital,0
+213,1,T0071,Blaauwberg Hospital,0
+213,2,T0072,Blaauwberg Hospital,0
+
+214A,0,T0073,Stables Turnaround,0
+214A,1,T0074,Stables Turnaround,0
+214A,2,T0075,Stables Turnaround,0
+214A,0,T0076,Marine Circle,1
+214A,1,T0077,Marine Circle,1
+214A,2,T0078,Marine Circle,1
+
+214B,0,T0079,Table View,0
+214B,0,T0080,Melkbosch Village,1
+
+214C,0,T0081,Table View,0
+214C,1,T0082,Table View,0
+214C,2,T0083,Table View,0
+214C,0,T0084,Melkbosstrand,1
+214C,1,T0085,Melkbosstrand,1
+214C,2,T0086,Melkbosstrand,1
+
+215,0,T0087,Blaauwberg Hospital,0
+215,1,T0088,Blaauwberg Hospital,0
+215,2,T0089,Blaauwberg Hospital,0
+215,0,T0090,Wood,1
+215,1,T0091,Wood,1
+215,2,T0092,Wood,1
+
+216,0,T0093,Big Bay,0
+216,1,T0094,Big Bay,0
+216,2,T0095,Big Bay,0
+216,0,T0096,Wood,1
+216,1,T0097,Wood,1
+216,2,T0098,Wood,1
+
+223,0,T0099,Blaauwberg Hospital,0
+223,1,T0100,Blaauwberg Hospital,0
+223,2,T0101,Blaauwberg Hospital,0
+
+231,0,T0102,Atlantis,0
+231,1,T0103,Atlantis,0
+231,2,T0104,Atlantis,0
+231,0,T0105,Atlantis INDUSTRIA East,1
+231,1,T0106,Atlantis INDUSTRIA East,1
+231,2,T0107,Atlantis INDUSTRIA East,1
+
+232,0,T0108,Atlantis,0
+232,1,T0109,Atlantis,0
+232,2,T0110,Atlantis,0
+232,0,T0111,Avondale,1
+232,1,T0112,Avondale,1
+232,2,T0113,Avondale,1
+
+233,0,T0114,Atlantis,0
+233,0,T0115,Saxonsea,1
+
+234,0,T0116,Atlantis,0
+234,1,T0117,Atlantis,0
+234,2,T0118,Atlantis,0
+234,0,T0119,Crown,1
+234,1,T0120,Crown,1
+234,2,T0121,Crown,1
+
+235,0,T0122,Atlantis,0
+235,1,T0123,Atlantis,0
+235,2,T0124,Atlantis,0
+235,0,T0125,Pella,1
+235,1,T0126,Pella,1
+235,2,T0127,Pella,1
+
+236,0,T0128,Atlantis,0
+236,1,T0129,Atlantis,0
+236,2,T0130,Atlantis,0
+236,0,T0131,Montezuma,1
+236,1,T0132,Montezuma,1
+236,2,T0133,Montezuma,1
+
+237,0,T0134,Atlantis,0
+237,1,T0135,Atlantis,0
+237,2,T0136,Atlantis,0
+237,0,T0137,Swawel,1
+237,1,T0138,Swawel,1
+237,2,T0139,Swawel,1
+
+244,0,T0140,Atlantis,0
+244,1,T0141,Atlantis,0
+244,2,T0142,Atlantis,0
+244,0,T0143,Avondale,1
+244,1,T0144,Avondale,1
+244,2,T0145,Avondale,1
+
+245,0,T0146,Atlantis,0
+245,1,T0147,Atlantis,0
+245,2,T0148,Atlantis,0
+245,0,T0149,Lisboa,1
+245,1,T0150,Lisboa,1
+245,2,T0151,Lisboa,1
+
+246,0,T0152,Atlantis,0
+246,1,T0153,Atlantis,0
+246,2,T0154,Atlantis,0
+246,0,T0155,Frans,1
+246,1,T0156,Frans,1
+246,2,T0157,Frans,1
+
+260,0,T0158,Victoria,0
+260,1,T0159,Victoria,0
+260,2,T0160,Victoria,0
+260,0,T0161,Milnerton Lighthouse,1
+260,1,T0162,Milnerton Lighthouse,1
+260,2,T0163,Milnerton Lighthouse,1
+
+261,0,T0164,Adderley,0
+261,1,T0165,Adderley,0
+261,2,T0166,Adderley,0
+261,0,T0167,Century City Rail,1
+261,1,T0168,Century City Rail,1
+261,2,T0169,Century City Rail,1
+
+262,0,T0170,Victoria,0
+262,1,T0171,Victoria,0
+262,2,T0172,Victoria,0
+262,0,T0173,Milnerton Lighthouse,1
+262,1,T0174,Milnerton Lighthouse,1
+262,2,T0175,Milnerton Lighthouse,1
+
+D01,0,T0176,Civic Centre,0
+D01,1,T0177,Civic Centre,0
+D01,2,T0178,Civic Centre,0
+D01,0,T0179,Kuyasa,1
+D01,1,T0180,Kuyasa,1
+D01,2,T0181,Kuyasa,1
+
+D02,0,T0182,Civic Centre,0
+D02,1,T0183,Civic Centre,0
+D02,2,T0184,Civic Centre,0
+D02,0,T0185,Khayelitsha West,1
+D02,1,T0186,Khayelitsha West,1
+D02,2,T0187,Khayelitsha West,1
+
+D03,0,T0188,Civic Centre,0
+D03,0,T0189,Mitchells Plain,1
+
+D04,0,T0190,Civic Centre,0
+D04,1,T0191,Civic Centre,0
+D04,2,T0192,Civic Centre,0
+D04,0,T0193,Kapteinsklip,1
+D04,1,T0194,Kapteinsklip,1
+D04,2,T0195,Kapteinsklip,1
+
+D05,0,T0196,Waterfront,0
+D05,0,T0197,Stables Turnaround,1
+
+D08,0,T0198,Century City,0
+D08,1,T0199,Century City,0
+D08,2,T0200,Century City,0
+D08,0,T0201,Stables Turnaround,1
+D08,1,T0202,Stables Turnaround,1
+
+T01,0,T0203,Stables Turnaround,0
+T01,1,T0204,Stables Turnaround,0
+T01,2,T0205,Stables Turnaround,0
+T01,0,T0206,Waterfront,1
+T01,1,T0207,Waterfront,1
+T01,2,T0208,Waterfront,1
+
+T01X,0,T0209,Stables Turnaround,0
+T01X,0,T0210,Waterfront,1
+
+T02,0,T0211,Civic Centre,0
+T02,1,T0212,Civic Centre,0
+T02,0,T0213,Atlantis,1
+T02,1,T0214,Atlantis,1
+
+T02X,0,T0215,Queens Beach,0
+T02X,0,T0216,Atlantis,1
+
+T03,0,T0217,Atlantis,0
+T03,1,T0218,Atlantis,0
+T03,2,T0219,Atlantis,0
+T03,0,T0220,Century City,1
+T03,1,T0221,Century City,1
+T03,2,T0222,Century City,1
+
+T04,0,T0223,Century City,0
+T04,1,T0224,Century City,0
+T04,2,T0225,Century City,0
+T04,0,T0226,Stables Turnaround,1
+T04,1,T0227,Stables Turnaround,1
+T04,2,T0228,Stables Turnaround,1

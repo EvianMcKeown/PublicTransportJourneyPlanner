@@ -2,6 +2,7 @@
 # import multiprocessing as mp
 from dataclasses import dataclass, field
 from email.policy import default
+from os import name
 import queue
 from re import I
 import sys
@@ -19,9 +20,10 @@ class Stop:
     where a commuter can board or get off a vehicle (train, bus, etc.)"""
 
     id: str
-    mode: int  # 1=train, 2=MyCiti, ...
+    mode: int  # 0=GoldenArrow, 1=MyCiti, 2=Train
     lat: float
     lon: float
+    name: str = ""
 
     earliest_arrival: Dict[int, int] = field(default_factory=dict)  # round -> time
     # earliest arrival time per round, updated in algo
@@ -50,6 +52,7 @@ class Route:
     id: str
     stops: List[Stop]  # can remove duplication of stops between routes and trips later
     trips: List[Trip] = field(default_factory=list)
+    name: str = ""
 
     @property
     def mode(self) -> int:

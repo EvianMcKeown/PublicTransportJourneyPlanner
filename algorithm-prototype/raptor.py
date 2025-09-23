@@ -295,22 +295,29 @@ def raptor_algo(
 
 
 if __name__ == "__main__":
+    from gtfs_reader import GTFSReader
+
     MAX_WALK_DIST = 3000  # maximum walkable distance in meters
     WALKING_SPEED = 5 * 1000 / 60
     MIN_TRANSFER_TIME = 2
+
+    gtfs = GTFSReader()
+    stops = gtfs.stops
+    routes = gtfs.routes
+    trips = gtfs.trips
 
     # Example Stops
     a = Stop("Greenpoint", 2, -33.918, 18.423)
     b = Stop("Gardens", 2, -33.935, 18.413)
     c = Stop("Observatory", 2, -34.05, 18.35)
 
-    stops = {s.id: s for s in [a, b, c]}
+    # stops = {s.id: s for s in [a, b, c]}
     # stops = [a, b, c]
 
     # Example Routes
-    route_example = Route("A", [a, b, c])
-    route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
-    route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
+    # route_example = Route("A", [a, b, c])
+    # route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
+    # route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
 
     routes = {route_example.id: route_example}
 

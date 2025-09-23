@@ -1,2 +1,4 @@
 agency_id,agency_name,agency_url,agency_timezone
+GABS,Golden Arrow Bus Services,http://www.gabs.co.za,Africa/Johannesburg
 MYCITI,MyCiTi Bus,http://www.myciti.org.za,Africa/Johannesburg
+MetrorailWC,Metrorail Western Cape,https://www.metrorail.co.za,Africa/Johannesburg

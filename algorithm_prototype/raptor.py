@@ -1,0 +1,404 @@
+### version 1
+# import multiprocessing as mp
+from dataclasses import dataclass, field
+from email.policy import default
+from os import name
+import queue
+from re import I
+import sys
+from tracemalloc import stop
+from typing import List, Dict, Optional, Tuple
+from math import ceil, radians, cos, sin, asin, sqrt  # Haversine formula
+
+# Value used as INFINITY
+INF: int = sys.maxsize
+
+
+@dataclass
+class Stop:
+    """each stop corresponds to a (distinct) location,
+    where a commuter can board or get off a vehicle (train, bus, etc.)"""
+
+    id: str
+    mode: int  # 0=GoldenArrow, 1=MyCiti, 2=Train
+    lat: float
+    lon: float
+    name: str = ""
+
+    earliest_arrival: Dict[int, int] = field(default_factory=dict)  # round -> time
+    # earliest arrival time per round, updated in algo
+    # can alternatively store earliest arrival time as a two dimensional array
+
+
+@dataclass
+class Trip:
+    """a time dependant sequence of stops a specific vehicle (train, bus, etc.)
+    makes on a line (route) - at each stop it may pick up or drop-off passengers
+    """
+
+    id: str
+    # stops: List[Stop]
+    # route: "Route"
+    departure_times: List[
+        int
+    ]  # departure times at corresponding stops (from associated route)
+
+
+@dataclass
+class Route:
+    """ordered list of stops and the trips coinciding with them. No time info here.
+    TODO maybe make a single list contain all this for a DOD approach?"""
+
+    id: str
+    stops: List[Stop]  # can remove duplication of stops between routes and trips later
+    trips: List[Trip] = field(default_factory=list)
+    name: str = ""
+
+    @property
+    def mode(self) -> int:
+        return self.stops[0].mode if self.stops else -1
+
+    def add_trip(self, trip: Trip):
+        # Ensure trip matches stop count
+        # TODO check that no duplicate trips
+        assert len(trip.departure_times) == len(self.stops)
+        self.trips.append(trip)
+
+
+@dataclass
+class Transfer:
+    """TODO"""
+
+    from_stop: Stop
+    to_stop: Stop
+    walking_time: int  # time in minutes
+
+
+class helper_functions:
+    @staticmethod
+    def check_mode(transport_mode: str) -> int:
+        match transport_mode:
+            case "train":
+                return 1
+            case "myciti":
+                return 2
+            case "goldenarrow":
+                return 3
+            case "taxi":
+                return 4
+        # if invalid string, return -1
+        return -1
+
+    @staticmethod
+    def stops_same_mode(stops: Dict[str, Stop]) -> bool:
+        s0 = next(iter(stops.values()))
+        for s in stops.values():
+            if s0.mode != s.mode:
+                return False
+        return True
+
+    @staticmethod
+    def haversine(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:
+        """Return distance in meters between two coordinates using Haversine
+            formula with mean earth radius.
+            Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
+
+        Args:
+            lat_a (float): latitude of coordinate a lon_a (float): longitude of
+            coordinate a lat_b (float): latitude of coordinate b lon_b (float):
+            longitude of coordinate b
+
+        Returns:
+            float: distance in meters
+        """
+
+        # degree to radian
+        lat_a, lon_a, lat_b, lon_b = map(radians, [lat_a, lon_a, lat_b, lon_b])
+        # get deltas
+        delta_lat = lat_b - lat_a  # y
+        delta_lon = lon_b - lon_a  # x
+        a = sin(delta_lat / 2) ** 2 + sin(delta_lon / 2) ** 2 * cos(lat_a) * cos(lat_b)
+        b = 2 * 6371 * 1000 * asin(sqrt(a))  # meters
+
+        return b
+
+    @staticmethod
+    def walkable(
+        lat_a: float, lon_a: float, lat_b: float, lon_b: float, dist=500
+    ) -> bool:
+        """
+        Determines if two positions, a and b, are less than some maximum
+        distance from each other. If so, then they can be used to move from one
+        route to another.
+
+        Args:
+            lat_a (float): latitude of coordinate a lon_a (float): longitude of
+            coordinate a lat_b (float): latitude of coordinate b lon_b (float):
+            longitude of coordinate b dist (int): maximum walking distance in
+            meters
+
+        Returns:
+            boolean: walkable
+        """
+
+        # Haversine formula - https://en.wikipedia.org/wiki/Haversine_formula
+
+        return helper_functions.haversine(lat_a, lon_a, lat_b, lon_b) <= dist
+
+
+def raptor_algo(
+    stops: Dict[str, Stop],
+    routes: Dict[str, Route],
+    transfers: List[Transfer],
+    source_id: str,
+    target_id: str,
+    departure_time: int,
+    max_rounds: int = 10,
+) -> Tuple[Dict[str, int], List[Optional[Dict]]]:
+    """RAPTOR - Round bAsed Public Transit Optimised Router.
+
+    v1: unoptimised
+
+    Args:
+        TODO
+
+    Returns:
+        TODO
+    """
+
+    # build index mapping for array storage
+    stop_ids = list(stops.keys())
+    id_to_idx: Dict[str, int] = {sid: i for i, sid in enumerate(stop_ids)}
+    idx_to_id: Dict[int, str] = {i: sid for sid, i in id_to_idx.items()}
+    n = len(stops.keys())
+
+    # adjacency lists for transfers (indices) - walking time from stop u to v
+    transfer_adj: List[List[Tuple[int, int]]] = [[] for _ in range(n)]
+    for t in transfers:
+        u = id_to_idx[t.from_stop.id]
+        v = id_to_idx[t.to_stop.id]
+        transfer_adj[u].append((v, t.walking_time))
+
+    # compute route-stop indices
+    routes_stop_indices: Dict[str, List[int]] = {}
+    for rid, route in routes.items():
+        routes_stop_indices[rid] = [id_to_idx[s.id] for s in route.stops]
+
+    # earliest arrival time for each stop over all rounds
+    best = [INF] * n
+    prev = [INF] * n
+    cur = [INF] * n
+
+    # initialise
+    if source_id not in id_to_idx:
+        raise ValueError("Origin not a valid Stop.")
+    source_idx = id_to_idx[source_id]
+    prev[source_idx] = departure_time
+    cur[source_idx] = departure_time
+
+    # marked stops: those improved in the last round (init to only source)
+    marked = [False] * n
+    marked[source_idx] = True
+    marked_list = [source_idx]
+
+    # store predecessors for path reconstruction
+    # each entry is a dict with keys: prev_idx, arrival_time, mode, route_id, trip_id, transfer_time
+    # or None if no predecessor (initially)
+    predecessor: List[Optional[Dict]] = [None] * n
+
+    # main round
+    for k in range(1, max_rounds + 1):
+        improved = False
+
+        # 1: Accumulate routes serving marked stops from previous round
+        Q: List[Tuple[str, int]] = []  # (route_id, first_marked_stop_index_in_route)
+        for rid, route in routes.items():
+            stop_indices = routes_stop_indices[rid]
+            # find first marked index in the route
+            first_marked_pos = None
+            for pos, stop_idx in enumerate(stop_indices):
+                if marked[stop_idx]:
+                    first_marked_pos = pos
+                    break
+            if first_marked_pos is not None:
+                Q.append((rid, first_marked_pos))
+
+        # reset marked for this round — will mark as we improve earliest times
+        marked = [False] * n
+        marked_list = []
+
+        # 2: Traverse each route
+        for rid, start_pos in Q:
+            cur_route = routes[rid]
+            stop_indices = routes_stop_indices[rid]
+            num_stops_in_route = len(stop_indices)
+
+            for trip in cur_route.trips:
+                # check whether we can board the trip (on this route) at any stop
+                # Try to board at earliest possible stop
+                boarded_at = None
+                for pos in range(start_pos, num_stops_in_route):
+                    stop_idx = stop_indices[pos]
+                    arr_prev = prev[stop_idx]
+                    if arr_prev == INF:
+                        continue  # if we cannot reach stop, then ignore
+                    trip_departure = trip.departure_times[pos]
+
+                    if trip_departure >= arr_prev:
+                        boarded_at = pos
+                        break  # board at first possible stop, and stop checking
+
+                if boarded_at is None:
+                    # can't use this trip from any marked stop
+                    continue
+
+                # move along trip from boarded_at stop
+                for pos2 in range(boarded_at, num_stops_in_route):
+                    stop_idx2 = stop_indices[pos2]
+                    trip_time = trip.departure_times[pos2]
+                    if trip_time < cur[stop_idx2]:
+                        if stop_idx2 == source_idx and trip_time > departure_time:
+                            # Don't overwrite source with later time
+                            continue
+                        cur[stop_idx2] = trip_time
+                        best[stop_idx2] = min(best[stop_idx2], trip_time)
+                        if not marked[stop_idx2]:
+                            marked[stop_idx2] = True
+                            marked_list.append(stop_idx2)
+                            improved = True
+
+                        # update predecessor
+                        predecessor[stop_idx2] = {
+                            "prev_idx": (
+                                stop_indices[pos2 - 1]
+                                if pos2 > boarded_at
+                                else boarded_at
+                            ),
+                            "arrival_time": trip_time,
+                            "mode": "trip",
+                            "route_id": rid,
+                            "trip_id": trip.id,
+                            "transfer_time": None,
+                        }
+
+        # 3: Look at foot-paths (transfers) — since we have no chained walks and
+        # we are using a fixed distance based formula for walking time, all we
+        # have to do is 'walk' through (pardon the pun) each transfer.
+        for p in marked_list:
+            arr_p = cur[p]
+            if arr_p == INF:
+                continue
+
+            for v, walk_time in transfer_adj[p]:
+                new_arrival = arr_p + walk_time
+                if new_arrival < cur[v]:
+                    cur[v] = new_arrival
+                    best[v] = min(best[v], new_arrival)
+                    if not marked[v]:
+                        marked[v] = True
+                        marked_list.append(v)
+                        improved = True
+                    # update predecessor
+                    predecessor[v] = {
+                        "prev_idx": p,
+                        "arrival_time": new_arrival,
+                        "mode": "transfer",
+                        "route_id": None,
+                        "trip_id": None,
+                        "transfer_time": walk_time,
+                    }
+
+        if not improved:
+            break
+
+        prev = cur[:]  # shallow copy list (values, not references)
+        cur = [INF] * n
+
+    best[source_idx] = departure_time  # reset source to departure time
+    result: Dict[str, int] = {}
+    for i, sid in idx_to_id.items():
+        result[sid] = best[i]
+
+    # reconstruct path
+    target_idx = id_to_idx[target_id]
+    journey = reconstruct_path(predecessor, idx_to_id, target_idx, source_idx)
+
+    return result, journey
+
+
+def reconstruct_path(predecessor, idx_to_id, target_idx, source_idx):
+    path = []
+    current = target_idx
+    while current != source_idx and predecessor[current] is not None:
+        step = predecessor[current].copy()
+        step["stop_id"] = idx_to_id[current]
+        step["from_stop_id"] = idx_to_id[step["prev_idx"]]
+        path.append(step)
+        current = step["prev_idx"]
+
+    # add source stop
+    path.append(
+        {
+            "stop_id": idx_to_id[source_idx],
+            "arrival_time": result[idx_to_id[source_idx]],
+            "mode": "start",
+            "route_id": None,
+            "trip_id": None,
+            "transfer_time": None,
+            "from_stop_id": None,
+        }
+    )
+    path.reverse()
+    return path
+
+
+if __name__ == "__main__":
+    from gtfs_reader import GTFSReader
+
+    MAX_WALK_DIST = 3000  # maximum walkable distance in meters
+    WALKING_SPEED = 5 * 1000 / 60
+    MIN_TRANSFER_TIME = 2
+
+    gtfs = GTFSReader()
+    stops = gtfs.stops
+    routes = gtfs.routes
+    trips = gtfs.trips
+
+    # Example Stops
+    a = Stop("Greenpoint", 2, -33.918, 18.423)
+    b = Stop("Gardens", 2, -33.935, 18.413)
+    c = Stop("Observatory", 2, -34.05, 18.35)
+
+    # stops = {s.id: s for s in [a, b, c]}
+    # stops = [a, b, c]
+
+    # Example Routes
+    # route_example = Route("A", [a, b, c])
+    # route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
+    # route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
+
+    routes = {route_example.id: route_example}
+
+    # Transfers
+    # determine if walkable
+    transfers: List[Transfer] = []
+    for s1 in stops.values():
+        for s2 in stops.values():
+            if s1.id != s2.id:
+                distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
+                # print(distance)
+                if distance <= MAX_WALK_DIST:
+                    walk_time_minutes = max(
+                        MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
+                    )
+                    transfers.append(Transfer(s1, s2, walk_time_minutes))
+
+    result = raptor_algo(
+        stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
+    )
+
+    # print(transfers)
+
+    print("Earliest arrivals (mins since Monday 00:00):")
+    for sid, t in result.items():
+        print(f"{sid}: {t}")

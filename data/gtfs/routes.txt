@@ -1,49 +1,398 @@
-route_id,agency_id,route_stops,route_start,route_end
-mc_107,1,CAMPS BAY-CIVIC CENTRE,CAMPS BAY,CIVIC CENTRE
-mc_104,1,ORANJEZICHT-GARDENS-ADDERLEY-WATERFRONT,Sea Point,Civic Centre
-mc_105,1,SEA POINT-FRESNAYE-CIVIC CENTRE,Sea Point,Civic Centre
-mc_103,1,ORANJEZICHT-GARDENS-CIVIC CENTRE,Oranjezicht,Civic Centre
-mc_108,1,HANGBERG-HOUT BAY HARBOUR-SEA POINT,Hangberg,Adderley
-mc_101,1,VREDEHOEK-GARDENS-CIVIC CENTRE,Vredehoek,Civic Centre
-mc_106,1,CAMPS BAY-CIVIC CENTRE,Camps Bay,Civic Centre
-mc_110,1,TABLE MOUNTAIN,,                                                      #MISSING DATA ROUTE 110
-mc_113,1,UPPER KLOOF STREET-ADDERLEY-WATERFRONT,Upper Kloof St,Adderley
-mc_114,1,SEA POINT-CIVIC CENTRE,,                                              #MISSING DATA ROUTE 114
-mc_102,1,SALT RIVER RAIL-WALMER ESTATE-CIVIC CENTRE,Salt River,Civic Centre
-mc_111,1,VREDEHOEK-GARDENS-CIVIC CENTRE,Vredehoek,Civic Centre
-mc_115,1,SEA POINT-GRAND PARADE,Sea Point,GRAND PARADE
-mc_109,1,HOUT BAY-IMIZAMO YETHU-SEA POINT,Hout Bay,Adderley
-mc_213,1,SUNNINGDALE-PARKLANDS-TABLE VIEW-SUNNINGDALE,Table View,
-mc_118,1,HANGBERG-IMIZAMO YETHU-SEA POINT-ADDERLEY,Hangberg,Adderley
-mc_214B,1,TABLE VIEW-MELKBOSCH VILLAGE,MelkboschVillage,Table View
-mc_214C,1,TABLE VIEW-MELKBOSSTRAND-DUYNEFONTEIN,Duynefontein,Table View
-mc_216,1,BIG BAY-WOOD DRIVE-WOOD,Big Bay,Wood
-mc_215,1,SUNNINGDALE-GIE ROAD-WOOD,Sunningdale,Wood
-mc_234,1,MAMRE(CROWN)-ATLANTIS,Crown,Atlantis
-mc_223,1,SUNNINGDALE-WEST BEACH-TABLE VIEW-SUNNINGDALE,Table View,
-mc_233,1,SAXONSEA-ATLANTIS,Saxonsea,Atlantis
-mc_232,1,ATLANTIS INDUSTRIA WEST-PROTEA PARK-AVONDALE-ATLANTIS,Avondale,Atlantis
-mc_214A,1,PARKLANDS-TABLE VIEW,Marine Circle,Dunoon
-mc_231,1,ATLANTIS INDUSTRIA EAST-ATLANTIS,Atlantis INDUSTRIA East,Atlantis
-mc_235,1,PELLA-ATLANTIS,Pella,Atlantis
-mc_236,1,SHERWOOD-ATLANTIS,Sherwood,Atlantis
-mc_237,1,ROBINVALE-ATLANTIS,Robinvale,Atlantis
-mc_260,1,SUMMER GREENS-WOODBRIDGE ISLAND,Woodbridge Island,SummerGreens
-mc_245,1,SAXONSEA-GOODE HOOP-ATLANTIS,Saxonsea,Atlantis
-mc_246,1,MAMRE (FRANS)-ATLANTIS,Frans,Atlantis
-mc_244,1,AVONDALE-PROTEA PARK-ATLANTIS INDUSTRIA WEST-ATLANTIS,Avondale,Atlantis
-mc_262,1,SUMMER GREENS-CENTURY CITY-WOODBRIDGE ISLAND,WoodbridgeIsland,SummerGreens
-mc_A01,1,AIRPORT - CIVIC CENTRE,,                                                  #MISSING ROUTE DATA ROUTE A01
-mc_D02,1,KHAYELITSHA WEST-CIVIC CENTRE,Civic Centre,Khayelitsha West
-mc_D01,1,KHAYELITSHA EAST-CIVIC CENTRE,Civic Centre,Khayelitsha East
-mc_D05,1,DUNOON-PARKLANDS-TABLE VIEW-CIVIC CENTRE,Dunoon,Waterfront
-mc_D03,1,MITCHELLS PLAIN EAST-CIVIC CENTRE,Civic Centre,MitchellsPlainE
-mc_D08,1,DUNOON-MONTAGUE GARDENS-CENTURY CITY,Century City,Dunoon
-mc_D04,1,KAPTEINSKLIP-MITCHELLS PLAIN TOWN CENTRE-CIVIC CENTRE,Civic Centre,Kapteinsklip
-mc_T01X,1,DUNOON-TABLE VIEW-CIVIC CENTRE,Dunoon,Civic Centre
-mc_T02X,1,ATLANTIS-TABLE VIEW-CIVIC CENTRE,Civic Centre,Atlantis
-mc_261,1,CENTURY CITY RAIL-OMURAMBA-SALT RIVER-ADDERLEY,Omuramba,Adderley
-mc_T02,1,CIVIC CENTRE-TABLE VIEW-ATLANTIS,Civic Centre,Atlantis
-mc_T04,1,DUNOON-OMURAMBA-CENTURY CITY,Century City,Dunoon
-mc_T01,1,DUNOON-TABLE VIEW-CIVIC CENTRE-WATERFRONT,Dunoon,Waterfront
-mc_T03,1,ATLANTIS-MELKBOSSTRAND-TABLE VIEW-CENTURY CITY,Atlantis,Century City
+route_id,agency_id,route_short_name
+ga_route_1-01,GABS,1
+ga_route_1-02,GABS,1
+ga_route_10-01,GABS,10
+ga_route_10-02,GABS,10
+ga_route_100-02,GABS,100
+ga_route_102-01,GABS,102
+ga_route_102-02,GABS,102
+ga_route_103-01,GABS,103
+ga_route_103-02,GABS,103
+ga_route_104-01,GABS,104
+ga_route_104-02,GABS,104
+ga_route_105-01,GABS,105
+ga_route_105-02,GABS,105
+ga_route_105A-01,GABS,105A
+ga_route_105A-02,GABS,105A
+ga_route_106-01,GABS,106
+ga_route_106-02,GABS,106
+ga_route_107-01,GABS,107
+ga_route_107-02,GABS,107
+ga_route_108-01,GABS,108
+ga_route_108-02,GABS,108
+ga_route_109-01,GABS,109
+ga_route_109-02,GABS,109
+ga_route_11-01,GABS,11
+ga_route_11-02,GABS,11
+ga_route_110-01,GABS,110
+ga_route_110-02,GABS,110
+ga_route_112-01,GABS,112
+ga_route_112-02,GABS,112
+ga_route_113-01,GABS,113
+ga_route_113-02,GABS,113
+ga_route_114-01,GABS,114
+ga_route_114-02,GABS,114
+ga_route_115-01,GABS,115
+ga_route_115-02,GABS,115
+ga_route_116-01,GABS,116
+ga_route_116-02,GABS,116
+ga_route_119-01,GABS,119
+ga_route_12-01,GABS,12
+ga_route_12-02,GABS,12
+ga_route_120-01,GABS,120
+ga_route_120-02,GABS,120
+ga_route_121-01,GABS,121
+ga_route_121-02,GABS,121
+ga_route_122-01,GABS,122
+ga_route_122-02,GABS,122
+ga_route_123-01,GABS,123
+ga_route_123-02,GABS,123
+ga_route_124-01,GABS,124
+ga_route_124-02,GABS,124
+ga_route_125-01,GABS,125
+ga_route_126-01,GABS,126
+ga_route_126-02,GABS,126
+ga_route_127-01,GABS,127
+ga_route_127-02,GABS,127
+ga_route_128-01,GABS,128
+ga_route_128-02,GABS,128
+ga_route_129-01,GABS,129
+ga_route_129-02,GABS,129
+ga_route_130-01,GABS,130
+ga_route_130-02,GABS,130
+ga_route_131-01,GABS,131
+ga_route_131-02,GABS,131
+ga_route_132-01,GABS,132
+ga_route_132-02,GABS,132
+ga_route_133-01,GABS,133
+ga_route_133-02,GABS,133
+ga_route_134-01,GABS,134
+ga_route_134-02,GABS,134
+ga_route_135-01,GABS,135
+ga_route_135-02,GABS,135
+ga_route_136-01,GABS,136
+ga_route_136-02,GABS,136
+ga_route_137-01,GABS,137
+ga_route_137-02,GABS,137
+ga_route_139-01,GABS,139
+ga_route_139-02,GABS,139
+ga_route_140-01,GABS,140
+ga_route_140-02,GABS,140
+ga_route_142-01,GABS,142
+ga_route_142-02,GABS,142
+ga_route_143-01,GABS,143
+ga_route_143-02,GABS,143
+ga_route_144-02,GABS,144
+ga_route_145-01,GABS,145
+ga_route_147-01,GABS,147
+ga_route_147-02,GABS,147
+ga_route_148-01,GABS,148
+ga_route_148-02,GABS,148
+ga_route_149-01,GABS,149
+ga_route_15-01,GABS,15
+ga_route_15-02,GABS,15
+ga_route_151-01,GABS,151
+ga_route_154-01,GABS,154
+ga_route_155-01,GABS,155
+ga_route_155-02,GABS,155
+ga_route_157-01,GABS,157
+ga_route_157-02,GABS,157
+ga_route_15A-01,GABS,15A
+ga_route_15A-02,GABS,15A
+ga_route_16-01,GABS,16
+ga_route_16-02,GABS,16
+ga_route_160-01,GABS,160
+ga_route_160-02,GABS,160
+ga_route_163-01,GABS,163
+ga_route_163-02,GABS,163
+ga_route_164-01,GABS,164
+ga_route_164-02,GABS,164
+ga_route_167-01,GABS,167
+ga_route_168-01,GABS,168
+ga_route_168-02,GABS,168
+ga_route_169-01,GABS,169
+ga_route_169-02,GABS,169
+ga_route_171-01,GABS,171
+ga_route_171-02,GABS,171
+ga_route_172-01,GABS,172
+ga_route_172-02,GABS,172
+ga_route_174-01,GABS,174
+ga_route_174-02,GABS,174
+ga_route_175-01,GABS,175
+ga_route_175-02,GABS,175
+ga_route_177-01,GABS,177
+ga_route_177-02,GABS,177
+ga_route_179-01,GABS,179
+ga_route_18-01,GABS,18
+ga_route_18-02,GABS,18
+ga_route_181-01,GABS,181
+ga_route_181-02,GABS,181
+ga_route_182-01,GABS,182
+ga_route_182-02,GABS,182
+ga_route_183-01,GABS,183
+ga_route_183-02,GABS,183
+ga_route_184-01,GABS,184
+ga_route_184-02,GABS,184
+ga_route_185-01,GABS,185
+ga_route_186-01,GABS,186
+ga_route_186-02,GABS,186
+ga_route_187-01,GABS,187
+ga_route_187-02,GABS,187
+ga_route_188-01,GABS,188
+ga_route_188-02,GABS,188
+ga_route_189-01,GABS,189
+ga_route_189-02,GABS,189
+ga_route_19-01,GABS,19
+ga_route_19-02,GABS,19
+ga_route_190-01,GABS,190
+ga_route_190-02,GABS,190
+ga_route_192-01,GABS,192
+ga_route_192-02,GABS,192
+ga_route_193-01,GABS,193
+ga_route_193-02,GABS,193
+ga_route_195-01,GABS,195
+ga_route_196-01,GABS,196
+ga_route_196-02,GABS,196
+ga_route_197-01,GABS,197
+ga_route_197-02,GABS,197
+ga_route_2-01,GABS,2
+ga_route_2-02,GABS,2
+ga_route_21-01,GABS,21
+ga_route_21-02,GABS,21
+ga_route_210-01,GABS,210
+ga_route_210-02,GABS,210
+ga_route_211-01,GABS,211
+ga_route_211-02,GABS,211
+ga_route_212-01,GABS,212
+ga_route_212-02,GABS,212
+ga_route_213-01,GABS,213
+ga_route_213-02,GABS,213
+ga_route_214-01,GABS,214
+ga_route_214-02,GABS,214
+ga_route_215-01,GABS,215
+ga_route_215-02,GABS,215
+ga_route_216-01,GABS,216
+ga_route_22-01,GABS,22
+ga_route_22-02,GABS,22
+ga_route_23-01,GABS,23
+ga_route_23-02,GABS,23
+ga_route_24-01,GABS,24
+ga_route_24-02,GABS,24
+ga_route_25-01,GABS,25
+ga_route_25-02,GABS,25
+ga_route_26-01,GABS,26
+ga_route_26-02,GABS,26
+ga_route_27-01,GABS,27
+ga_route_27-02,GABS,27
+ga_route_28-02,GABS,28
+ga_route_29-01,GABS,29
+ga_route_29-02,GABS,29
+ga_route_3-01,GABS,3
+ga_route_3-02,GABS,3
+ga_route_30-01,GABS,30
+ga_route_30-02,GABS,30
+ga_route_31-01,GABS,31
+ga_route_31-02,GABS,31
+ga_route_32-01,GABS,32
+ga_route_32-02,GABS,32
+ga_route_33-01,GABS,33
+ga_route_33-02,GABS,33
+ga_route_34-01,GABS,34
+ga_route_34-02,GABS,34
+ga_route_35-01,GABS,35
+ga_route_35-02,GABS,35
+ga_route_36-01,GABS,36
+ga_route_36-02,GABS,36
+ga_route_37-01,GABS,37
+ga_route_37-02,GABS,37
+ga_route_38-01,GABS,38
+ga_route_38-02,GABS,38
+ga_route_39-01,GABS,39
+ga_route_39-02,GABS,39
+ga_route_4-01,GABS,4
+ga_route_4-02,GABS,4
+ga_route_40-01,GABS,40
+ga_route_40-02,GABS,40
+ga_route_41-01,GABS,41
+ga_route_41-02,GABS,41
+ga_route_43-01,GABS,43
+ga_route_43-02,GABS,43
+ga_route_44-01,GABS,44
+ga_route_44-02,GABS,44
+ga_route_45-01,GABS,45
+ga_route_45-02,GABS,45
+ga_route_45A-01,GABS,45A
+ga_route_45A-02,GABS,45A
+ga_route_46-01,GABS,46
+ga_route_46-02,GABS,46
+ga_route_47-01,GABS,47
+ga_route_47-02,GABS,47
+ga_route_48-01,GABS,48
+ga_route_48-02,GABS,48
+ga_route_49-01,GABS,49
+ga_route_49-02,GABS,49
+ga_route_5-01,GABS,5
+ga_route_5-02,GABS,5
+ga_route_50-01,GABS,50
+ga_route_50-02,GABS,50
+ga_route_52-01,GABS,52
+ga_route_52-02,GABS,52
+ga_route_53-01,GABS,53
+ga_route_53-02,GABS,53
+ga_route_54-01,GABS,54
+ga_route_54-02,GABS,54
+ga_route_55-01,GABS,55
+ga_route_55-02,GABS,55
+ga_route_56-01,GABS,56
+ga_route_56-02,GABS,56
+ga_route_57-02,GABS,57
+ga_route_58-01,GABS,58
+ga_route_58-02,GABS,58
+ga_route_59-01,GABS,59
+ga_route_59-02,GABS,59
+ga_route_6-01,GABS,6
+ga_route_6-02,GABS,6
+ga_route_60-01,GABS,60
+ga_route_60-02,GABS,60
+ga_route_61-01,GABS,61
+ga_route_61-02,GABS,61
+ga_route_62-01,GABS,62
+ga_route_62-02,GABS,62
+ga_route_63-01,GABS,63
+ga_route_63-02,GABS,63
+ga_route_64-01,GABS,64
+ga_route_64-02,GABS,64
+ga_route_65-01,GABS,65
+ga_route_65-02,GABS,65
+ga_route_66-01,GABS,66
+ga_route_66-02,GABS,66
+ga_route_66A-01,GABS,66A
+ga_route_66A-02,GABS,66A
+ga_route_67-01,GABS,67
+ga_route_67-02,GABS,67
+ga_route_68-01,GABS,68
+ga_route_68-02,GABS,68
+ga_route_69-01,GABS,69
+ga_route_69-02,GABS,69
+ga_route_7-01,GABS,7
+ga_route_7-02,GABS,7
+ga_route_70-01,GABS,70
+ga_route_70-02,GABS,70
+ga_route_71-01,GABS,71
+ga_route_71-02,GABS,71
+ga_route_72-01,GABS,72
+ga_route_72-02,GABS,72
+ga_route_73-01,GABS,73
+ga_route_73-02,GABS,73
+ga_route_74-01,GABS,74
+ga_route_74-02,GABS,74
+ga_route_75-01,GABS,75
+ga_route_75-02,GABS,75
+ga_route_76-01,GABS,76
+ga_route_76-02,GABS,76
+ga_route_77-01,GABS,77
+ga_route_77-02,GABS,77
+ga_route_78-01,GABS,78
+ga_route_78-02,GABS,78
+ga_route_79-01,GABS,79
+ga_route_79-02,GABS,79
+ga_route_8-01,GABS,8
+ga_route_8-02,GABS,8
+ga_route_80-01,GABS,80
+ga_route_80-02,GABS,80
+ga_route_81-01,GABS,81
+ga_route_81-02,GABS,81
+ga_route_82-01,GABS,82
+ga_route_82-02,GABS,82
+ga_route_83-01,GABS,83
+ga_route_83-02,GABS,83
+ga_route_84-01,GABS,84
+ga_route_85-01,GABS,85
+ga_route_85-02,GABS,85
+ga_route_86-01,GABS,86
+ga_route_86-02,GABS,86
+ga_route_87-01,GABS,87
+ga_route_87-02,GABS,87
+ga_route_89-01,GABS,89
+ga_route_89-02,GABS,89
+ga_route_9-01,GABS,9
+ga_route_90-01,GABS,90
+ga_route_91-01,GABS,91
+ga_route_91-02,GABS,91
+ga_route_92-01,GABS,92
+ga_route_92-02,GABS,92
+ga_route_93-01,GABS,93
+ga_route_93-02,GABS,93
+ga_route_94-01,GABS,94
+ga_route_94-02,GABS,94
+ga_route_96-01,GABS,96
+ga_route_96-02,GABS,96
+ga_route_97-01,GABS,97
+ga_route_97-02,GABS,97
+ga_route_98-01,GABS,98
+ga_route_98-02,GABS,98
+ga_route_99-01,GABS,99
+ga_route_99-02,GABS,99
+mr_1,MetrorailWC,1
+mr_5,MetrorailWC,5
+mr_90,MetrorailWC,90
+mr_99,MetrorailWC,99
+mr_95,MetrorailWC,95
+mr_93,MetrorailWC,93
+mr_92,MetrorailWC,92
+mr_90A,MetrorailWC,90A
+mr_35,MetrorailWC,35
+mr_34,MetrorailWC,34
+mr_32,MetrorailWC,32
+mr_23,MetrorailWC,23
+mr_25,MetrorailWC,25
+mr_28,MetrorailWC,28
+mr_35A,MetrorailWC,35A
+mc_107,MYCITI,107
+mc_104,MYCITI,104
+mc_105,MYCITI,105
+mc_103,MYCITI,103
+mc_108,MYCITI,108
+mc_101,MYCITI,101
+mc_106,MYCITI,106
+mc_110,MYCITI,110
+mc_113,MYCITI,113
+mc_114,MYCITI,114
+mc_102,MYCITI,102
+mc_111,MYCITI,111
+mc_115,MYCITI,115
+mc_109,MYCITI,109
+mc_213,MYCITI,213
+mc_118,MYCITI,118
+mc_214B,MYCITI,214B
+mc_214C,MYCITI,214C
+mc_216,MYCITI,216
+mc_215,MYCITI,215
+mc_234,MYCITI,234
+mc_223,MYCITI,223
+mc_233,MYCITI,233
+mc_232,MYCITI,232
+mc_214A,MYCITI,214A
+mc_231,MYCITI,231
+mc_235,MYCITI,235
+mc_236,MYCITI,236
+mc_237,MYCITI,237
+mc_260,MYCITI,260
+mc_245,MYCITI,245
+mc_246,MYCITI,246
+mc_244,MYCITI,244
+mc_262,MYCITI,262
+mc_A01,MYCITI,A01
+mc_D02,MYCITI,D02
+mc_D01,MYCITI,D01
+mc_D05,MYCITI,D05
+mc_D03,MYCITI,D03
+mc_D08,MYCITI,D08
+mc_D04,MYCITI,D04
+mc_T01X,MYCITI,T01X
+mc_T02X,MYCITI,T02X
+mc_261,MYCITI,261
+mc_T02,MYCITI,T02
+mc_T04,MYCITI,T04
+mc_T01,MYCITI,T01
+mc_T03,MYCITI,T03

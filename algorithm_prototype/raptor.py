@@ -12,6 +12,9 @@ from math import ceil, radians, cos, sin, asin, sqrt  # Haversine formula
 
 # Value used as INFINITY
 INF: int = sys.maxsize
+MAX_WALK_DIST = 3000  # maximum walkable distance in meters
+WALKING_SPEED = 5 * 1000 / 60
+MIN_TRANSFER_TIME = 2
 
 
 @dataclass
@@ -61,7 +64,13 @@ class Route:
     def add_trip(self, trip: Trip):
         # Ensure trip matches stop count
         # TODO check that no duplicate trips
-        assert len(trip.departure_times) == len(self.stops)
+        if len(self.stops) != len(trip.departure_times):
+            trip_dep_list = trip.departure_times
+            route_stops = self.stops
+            raise ValueError(
+                f"Error: Trip {trip.id} has {len(trip.departure_times)} departure times ({trip_dep_list}), but route {self.id} has {len(self.stops)} stops ({route_stops})."
+            )
+        # assert len(trip.departure_times) == len(self.stops)
         self.trips.append(trip)
 
 
@@ -145,6 +154,41 @@ class helper_functions:
 
         return helper_functions.haversine(lat_a, lon_a, lat_b, lon_b) <= dist
 
+    @staticmethod
+    def create_transfers(
+        stops: Dict[str, Stop],
+        max_walking_dist: int = MAX_WALK_DIST,
+        min_transfer_time: int = MIN_TRANSFER_TIME,
+        walking_speed: float = WALKING_SPEED,
+    ) -> List[Transfer]:
+        """Creates transfers between all stops that are walkable within the specified maximum walking distance.
+
+        Args:
+            stops (Dict[str, Stop]): Stops to consider for transfers.
+            max_walking_dist (int, optional): Maximum distance to create transfers between. Defaults to MAX_WALK_DIST.
+            min_transfer_time (int, optional): Minimum time to complete a transfer. Defaults to MIN_TRANSFER_TIME.
+            walking_speed (float, optional): Speed of travel -> Determines time taken. Defaults to WALKING_SPEED.
+
+        Returns:
+            List[Transfer]: List of transfers between stops.
+        """
+
+        # determine if walkable
+        transfers: List[Transfer] = []
+        for s1 in stops.values():
+            for s2 in stops.values():
+                if s1.id != s2.id:
+                    distance = helper_functions.haversine(
+                        s1.lat, s1.lon, s2.lat, s2.lon
+                    )
+                    # print(distance)
+                    if distance <= max_walking_dist:
+                        walk_time_minutes = max(
+                            min_transfer_time, ceil(distance / walking_speed)
+                        )
+                        transfers.append(Transfer(s1, s2, walk_time_minutes))
+        return transfers
+
 
 def raptor_algo(
     stops: Dict[str, Stop],
@@ -173,6 +217,7 @@ def raptor_algo(
     n = len(stops.keys())
 
     # adjacency lists for transfers (indices) - walking time from stop u to v
+    # TODO: THIS TAKES STUPIDLY LONG - DO IN PREPROCESSING
     transfer_adj: List[List[Tuple[int, int]]] = [[] for _ in range(n)]
     for t in transfers:
         u = id_to_idx[t.from_stop.id]
@@ -321,12 +366,15 @@ def raptor_algo(
 
     # reconstruct path
     target_idx = id_to_idx[target_id]
-    journey = reconstruct_path(predecessor, idx_to_id, target_idx, source_idx)
+    journey = []
+    # reconstruct_path(predecessor, idx_to_id, target_idx, source_idx, result)
 
     return result, journey
 
 
-def reconstruct_path(predecessor, idx_to_id, target_idx, source_idx):
+def reconstruct_path(
+    predecessor, idx_to_id, target_idx, source_idx, result: Dict[str, int]
+):
     path = []
     current = target_idx
     while current != source_idx and predecessor[current] is not None:
@@ -355,10 +403,6 @@ def reconstruct_path(predecessor, idx_to_id, target_idx, source_idx):
 if __name__ == "__main__":
     from gtfs_reader import GTFSReader
 
-    MAX_WALK_DIST = 3000  # maximum walkable distance in meters
-    WALKING_SPEED = 5 * 1000 / 60
-    MIN_TRANSFER_TIME = 2
-
     gtfs = GTFSReader()
     stops = gtfs.stops
     routes = gtfs.routes
@@ -377,28 +421,28 @@ if __name__ == "__main__":
     # route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
     # route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
 
-    routes = {route_example.id: route_example}
+    # routes = {route_example.id: route_example}
 
     # Transfers
     # determine if walkable
-    transfers: List[Transfer] = []
-    for s1 in stops.values():
-        for s2 in stops.values():
-            if s1.id != s2.id:
-                distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
-                # print(distance)
-                if distance <= MAX_WALK_DIST:
-                    walk_time_minutes = max(
-                        MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
-                    )
-                    transfers.append(Transfer(s1, s2, walk_time_minutes))
+    # transfers: List[Transfer] = []
+    # for s1 in stops.values():
+    #    for s2 in stops.values():
+    #        if s1.id != s2.id:
+    #            distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
+    #            # print(distance)
+    #            if distance <= MAX_WALK_DIST:
+    #                walk_time_minutes = max(
+    #                    MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
+    #                )
+    #                transfers.append(Transfer(s1, s2, walk_time_minutes))
 
-    result = raptor_algo(
-        stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
-    )
+    # result = raptor_algo(
+    #    stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
+    # )
 
     # print(transfers)
 
-    print("Earliest arrivals (mins since Monday 00:00):")
-    for sid, t in result.items():
-        print(f"{sid}: {t}")
+    # print("Earliest arrivals (mins since Monday 00:00):")
+    # for sid, t in result.items():
+    #    print(f"{sid}: {t}")

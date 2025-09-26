@@ -1,5 +1,13 @@
 from algorithm_prototype import raptor
-from algorithm_prototype.raptor import Stop, Route, Trip, Transfer, raptor_algo
+from algorithm_prototype.raptor import (
+    Stop,
+    Route,
+    Trip,
+    Transfer,
+    raptor_algo,
+    helper_functions as hf,
+    reconstruct_path_objs,
+)
 from algorithm_prototype.gtfs_reader import GTFSReader
 from datetime import timedelta
 
@@ -122,6 +130,213 @@ def test_multiple_competing_routes():
     assert arrival_times["B"] == 430
     assert arrival_times["E"] == 435
     # assert path["E"][0].stop_id == "B" # Path must arrive from B
+
+
+def test_simple_path_reconstruction():
+    """
+    Tests the path reconstruction for a single, direct trip (A -> B).
+    Verifies the structure and content of the returned path list.
+    """
+    # Create stops
+    a = Stop("SA", 1, -34.0, 18.0, name="Stop A")
+    b = Stop("SB", 1, -34.1, 18.1, name="Stop B")
+
+    stops_dict = {s.id: s for s in [a, b]}
+
+    # Route R1: SA -> SB
+    route1 = Route("R1", [a, b], [])
+    trip_1 = Trip(
+        "T101", [420, 435]
+    )  # Departs A at 7:00 (420), Arrives B at 7:15 (435)
+    route1.add_trip(trip_1)
+
+    routes = {route1.id: route1}
+    transfers = []
+
+    start_time = 415  # 6:55 AM (early enough to catch the 7:00 trip)
+
+    # Run RAPTOR from SA to SB
+    arrival_times, path = raptor_algo(
+        stops_dict, routes, transfers, "SA", "SB", start_time, 2
+    )
+
+    # 1. Check Arrival Time (Sanity Check)
+    assert arrival_times["SB"] == 435
+
+    # 2. Check Path Structure and Length
+    # Expected path: Start -> Trip segment (SA to SB)
+    assert isinstance(path, list)
+    assert len(path) == 2
+
+    # 3. Check Start Step (Index 0)
+    start_step = path[0]
+    assert start_step["stop_id"] == "SA"
+    assert start_step["arrival_time"] == start_time
+    assert start_step["mode"] == "start"
+    assert start_step["from_stop_id"] is None
+
+    # 4. Check Trip Step (Index 1)
+    trip_step = path[1]
+    assert trip_step["stop_id"] == "SB"
+    assert trip_step["from_stop_id"] == "SA"
+    assert trip_step["arrival_time"] == 435
+    assert trip_step["mode"] == "trip"
+    assert trip_step["route_id"] == "R1"
+    assert trip_step["trip_id"] == "T101"
+    assert trip_step["transfer_time"] is None
+
+
+def test_full_path_reconstruction_with_transfer():
+    """
+    Tests the path reconstruction for a two-trip journey connected by a transfer.
+    Verifies that the path contains the correct sequence of Stop IDs, Trip IDs,
+    and the Transfer segment.
+    """
+    # Create stops
+    a = Stop("SA", 2, -33.918, 18.423, name="Stop A")
+    b = Stop("SB", 2, -33.935, 18.413, name="Stop B")
+    c = Stop("SC", 2, -34.05, 18.35, name="Stop C")
+    d = Stop("SD", 2, -34.06, 18.36, name="Stop D")
+
+    stops_dict = {s.id: s for s in [a, b, c, d]}
+
+    # Route 1: SA -> SB
+    route1 = Route("R1", [a, b], [])
+    route1.add_trip(
+        Trip("T101", [420, 430])
+    )  # Departs A at 7:00 (420), Arrives B at 7:10 (430)
+
+    # Route 2: SC -> SD
+    route2 = Route("R2", [c, d], [])
+    route2.add_trip(
+        Trip("T201", [440, 450])
+    )  # Departs C at 7:20 (440), Arrives D at 7:30 (450)
+
+    routes = {route1.id: route1, route2.id: route2}
+
+    # Transfer: SB -> SC (takes 5 minutes)
+    transfers = [Transfer(b, c, 5)]
+
+    # Start just before the first trip's departure
+    start_time = 415
+
+    # Run RAPTOR from SA to SD
+    arrival_times, path = raptor_algo(
+        stops_dict, routes, transfers, "SA", "SD", start_time, 3
+    )
+
+    # 1. Check Arrival Times (Sanity Check)
+    assert arrival_times["SD"] == 450
+    assert arrival_times["SC"] == 435  # Arrive at C via transfer at 430 + 5 = 435
+
+    # 2. Check Path Structure and Length
+    # Expected path: Start -> R1/T101 (SA to SB) -> Transfer (SB to SC) -> R2/T201 (SC to SD)
+    assert isinstance(path, list)
+    assert len(path) == 4
+
+    # 3. Check Start Step (Index 0)
+    start_step = path[0]
+    assert start_step["stop_id"] == "SA"
+    assert start_step["mode"] == "start"
+    assert start_step["arrival_time"] == start_time
+    assert start_step["from_stop_id"] is None
+
+    # 4. Check First Trip Segment (Index 1)
+    trip1_step = path[1]
+    assert trip1_step["stop_id"] == "SB"
+    assert trip1_step["from_stop_id"] == "SA"
+    assert trip1_step["arrival_time"] == 430
+    assert trip1_step["mode"] == "trip"
+    assert trip1_step["route_id"] == "R1"
+    assert trip1_step["trip_id"] == "T101"
+
+    # 5. Check Transfer Segment (Index 2)
+    transfer_step = path[2]
+    assert transfer_step["stop_id"] == "SC"
+    assert transfer_step["from_stop_id"] == "SB"
+    assert transfer_step["arrival_time"] == 435  # 430 + 5
+    assert transfer_step["mode"] == "transfer"
+    assert transfer_step["transfer_time"] == 5
+    assert transfer_step["trip_id"] is None
+
+    # 6. Check Second Trip Segment (Index 3 - Final Destination)
+    trip2_step = path[3]
+    assert trip2_step["stop_id"] == "SD"
+    assert trip2_step["from_stop_id"] == "SC"
+    assert trip2_step["arrival_time"] == 450
+    assert trip2_step["mode"] == "trip"
+    assert trip2_step["route_id"] == "R2"
+    assert trip2_step["trip_id"] == "T201"
+
+
+def test_path_object_hydration_with_transfer_object():
+    """
+    Tests that the path includes the actual Transfer object for transfer segments.
+    """
+    # 1. Setup Data
+    a = Stop("SA", 2, -33.918, 18.423, name="Stop A")
+    b = Stop("SB", 2, -33.935, 18.413, name="Stop B")
+    c = Stop("SC", 2, -34.05, 18.35, name="Stop C")
+    d = Stop("SD", 2, -34.06, 18.36, name="Stop D")
+
+    stops_dict = {s.id: s for s in [a, b, c, d]}
+
+    route1 = Route("R1", [a, b], [])
+    trip1 = Trip("T101", [420, 430])
+    route1.add_trip(trip1)
+
+    route2 = Route("R2", [c, d], [])
+    trip2 = Trip("T201", [440, 450])
+    route2.add_trip(trip2)
+
+    routes_dict = {route1.id: route1, route2.id: route2}
+
+    # Define the specific transfer object
+    transfer_b_c = Transfer(b, c, 5)
+    transfers = [transfer_b_c]
+
+    # Preprocessing: Create the necessary lookup map
+    transfers_map = hf.create_transfer_map(
+        transfers
+    )  # Key: ('SB', 'SC') -> transfer_b_c
+
+    start_time = 415
+
+    # 2. Run RAPTOR
+    _, path_ids = raptor_algo(
+        stops_dict, routes_dict, transfers, "SA", "SD", start_time, 3
+    )
+
+    # 3. Reconstruct Path with Objects
+    # Pass the new transfers_map argument
+    hydrated_path = reconstruct_path_objs(
+        path_ids, stops_dict, routes_dict, transfers_map
+    )
+
+    # 4. Assertions on Hydrated Path
+
+    # Step 2: First Trip Segment (Sanity Check)
+    trip1_step = hydrated_path[1]
+    assert trip1_step["mode"] == "trip"
+    assert "transfer_object" not in trip1_step
+    assert trip1_step["trip_object"] is trip1
+
+    # Step 3: Transfer Segment (SB -> SC)
+    transfer_step = hydrated_path[2]
+    assert transfer_step["mode"] == "transfer"
+    assert transfer_step["from_stop_object"] is b
+    assert transfer_step["stop_object"] is c
+
+    # **KEY ASSERTION: Check the Transfer Object**
+    assert "transfer_object" in transfer_step
+    assert transfer_step["transfer_object"] is transfer_b_c
+    assert transfer_step["transfer_object"].walking_time == 5
+
+    # Step 4: Second Trip Segment (Sanity Check)
+    trip2_step = hydrated_path[3]
+    assert trip2_step["mode"] == "trip"
+    assert trip2_step["trip_object"] is trip2
+    assert "transfer_object" not in trip2_step
 
 
 def test_gtfs_reader():

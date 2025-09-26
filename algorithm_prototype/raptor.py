@@ -7,7 +7,7 @@ import queue
 from re import I
 import sys
 from tracemalloc import stop
-from typing import List, Dict, Optional, Tuple
+from typing import Any, List, Dict, Optional, Tuple
 from math import ceil, radians, cos, sin, asin, sqrt  # Haversine formula
 
 # Value used as INFINITY
@@ -189,6 +189,24 @@ class helper_functions:
                         transfers.append(Transfer(s1, s2, walk_time_minutes))
         return transfers
 
+    @staticmethod
+    def create_transfer_map(
+        transfers: List[Transfer],
+    ) -> Dict[Tuple[str, str], Transfer]:
+        """Creates dictionary mapping (from_stop_id, to_stop_id) to the Transfer object.
+
+        Args:
+            transfers (List[Transfer]): List of all transfers.
+
+        Returns:
+            Dict[Tuple[str, str], Transfer]: Mapping of (from_stop_id, to_stop_id) to Transfer object.
+        """
+        transfer_map: Dict[Tuple[str, str], Transfer] = {}
+        for t in transfers:
+            # Use IDs as keys
+            transfer_map[(t.from_stop.id, t.to_stop.id)] = t
+        return transfer_map
+
 
 def raptor_algo(
     stops: Dict[str, Stop],
@@ -198,7 +216,7 @@ def raptor_algo(
     target_id: str,
     departure_time: int,
     max_rounds: int = 10,
-) -> Tuple[Dict[str, int], List[Optional[Dict]]]:
+) -> Tuple[Dict[str, int], List[Dict[str, Any]]]:
     """RAPTOR - Round bAsed Public Transit Optimised Router.
 
     v1: unoptimised
@@ -207,7 +225,9 @@ def raptor_algo(
         TODO
 
     Returns:
-        TODO
+        Tuple[Dict[str, int], List[Optional[Dict]]]:
+            - Dict of earliest arrival times at all stops.
+            - List of steps (the reconstructed fastest path from source to target).
     """
 
     # build index mapping for array storage
@@ -238,6 +258,8 @@ def raptor_algo(
     if source_id not in id_to_idx:
         raise ValueError("Origin not a valid Stop.")
     source_idx = id_to_idx[source_id]
+
+    best[source_idx] = departure_time
     prev[source_idx] = departure_time
     cur[source_idx] = departure_time
 
@@ -298,15 +320,21 @@ def raptor_algo(
                     continue
 
                 # move along trip from boarded_at stop
-                for pos2 in range(boarded_at, num_stops_in_route):
+                # -> start look form stop after the boarding_at stop
+                for pos2 in range(boarded_at + 1, num_stops_in_route):
                     stop_idx2 = stop_indices[pos2]
+                    # arrival time at stop_idx2
                     trip_time = trip.departure_times[pos2]
+                    prev_stop_idx = stop_indices[pos2 - 1]
+
                     if trip_time < cur[stop_idx2]:
                         if stop_idx2 == source_idx and trip_time > departure_time:
                             # Don't overwrite source with later time
                             continue
+
                         cur[stop_idx2] = trip_time
                         best[stop_idx2] = min(best[stop_idx2], trip_time)
+
                         if not marked[stop_idx2]:
                             marked[stop_idx2] = True
                             marked_list.append(stop_idx2)
@@ -314,11 +342,7 @@ def raptor_algo(
 
                         # update predecessor
                         predecessor[stop_idx2] = {
-                            "prev_idx": (
-                                stop_indices[pos2 - 1]
-                                if pos2 > boarded_at
-                                else boarded_at
-                            ),
+                            "prev_idx": prev_stop_idx,
                             "arrival_time": trip_time,
                             "mode": "trip",
                             "route_id": rid,
@@ -339,6 +363,8 @@ def raptor_algo(
                 if new_arrival < cur[v]:
                     cur[v] = new_arrival
                     best[v] = min(best[v], new_arrival)
+
+                    # transfers can mark a stop not reached by a trip
                     if not marked[v]:
                         marked[v] = True
                         marked_list.append(v)
@@ -359,15 +385,18 @@ def raptor_algo(
         prev = cur[:]  # shallow copy list (values, not references)
         cur = [INF] * n
 
+    # finalize earliest arrival times dict
     best[source_idx] = departure_time  # reset source to departure time
     result: Dict[str, int] = {}
     for i, sid in idx_to_id.items():
         result[sid] = best[i]
 
     # reconstruct path
+    if target_id not in id_to_idx or result[target_id] == INF:
+        # no path to target
+        return result, []
     target_idx = id_to_idx[target_id]
-    journey = []
-    # reconstruct_path(predecessor, idx_to_id, target_idx, source_idx, result)
+    journey = reconstruct_path(predecessor, idx_to_id, target_idx, source_idx, result)
 
     return result, journey
 
@@ -375,8 +404,22 @@ def raptor_algo(
 def reconstruct_path(
     predecessor, idx_to_id, target_idx, source_idx, result: Dict[str, int]
 ):
-    path = []
+    """TODO: _summary_
+
+    Args:
+        predecessor (_type_): _description_
+        idx_to_id (_type_): _description_
+        target_idx (_type_): _description_
+        source_idx (_type_): _description_
+        result (Dict[str, int]): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    path: List[Dict] = []
     current = target_idx
+
+    # trace from target back to source
     while current != source_idx and predecessor[current] is not None:
         step = predecessor[current].copy()
         step["stop_id"] = idx_to_id[current]
@@ -384,7 +427,15 @@ def reconstruct_path(
         path.append(step)
         current = step["prev_idx"]
 
-    # add source stop
+    # If the trace stops before the source, something went wrong, or the source
+    # was reached via a transfer that wasn't recorded properly (which is unlikely
+    # for the initial source stop). We rely on the initial check for path existence.
+    if current != source_idx:
+        # Path trace failed to reach the source, return empty
+        empty_path: List[Dict] = []
+        return empty_path
+
+    # add source stop as starting point
     path.append(
         {
             "stop_id": idx_to_id[source_idx],
@@ -398,6 +449,63 @@ def reconstruct_path(
     )
     path.reverse()
     return path
+
+
+def reconstruct_path_objs(
+    path: List[Dict[str, Any]],
+    stops_dict: Dict[str, "Stop"],
+    routes_dict: Dict[str, "Route"],
+    transfers_dict: Dict[Tuple[str, str], Transfer],
+) -> List[Dict[str, Any]]:
+    """Convert path with IDs to path with Stop, Route, and Trip objects.
+
+    Args:
+        path (List[Dict[str, Any]]): Path returned by RAPTOR with stop and route IDs.
+        stops_dict (Dict[str, Stop]): Dictionary of all Stop objects by ID.
+        routes_dict (Dict[str, Route]): Dictionary of all Route objects by ID.
+
+    Returns:
+        List[Dict[str, Any]]: Path with Stop and Route object references.
+    """
+    path_objs: List[Dict[str, Any]] = []
+    for step in path:
+        new_step = step.copy()
+
+        # Find Stop objects
+        # stop_id is the arrival stop for this step
+        if new_step.get("stop_id") in stops_dict:
+            new_step["stop_object"] = stops_dict[new_step["stop_id"]]
+
+        # from_stop_id is the departure stop for this step
+        if new_step.get("from_stop_id") in stops_dict:
+            new_step["from_stop_object"] = stops_dict[new_step["from_stop_id"]]
+
+        # Find Route and Trip objects (only for trip steps)
+        if new_step["mode"] == "trip":
+            route_id = new_step.get("route_id")
+            trip_id = new_step.get("trip_id")
+
+            if route_id in routes_dict:
+                route = routes_dict[route_id]
+                new_step["route_object"] = route
+
+                # Find specific Trip object within route
+                if trip_id:
+                    trip = next((t for t in route.trips if t.id == trip_id), None)
+                    new_step["trip_object"] = trip
+
+        # Find Transfer object (only for transfer steps)
+        elif new_step["mode"] == "transfer":
+            from_id = new_step.get("from_stop_id")
+            to_id = new_step.get("stop_id")
+
+            if from_id and to_id:
+                transfer_key = (from_id, to_id)
+                if transfer_key in transfers_dict:
+                    new_step["transfer_object"] = transfers_dict[transfer_key]
+
+        path_objs.append(new_step)
+    return path_objs
 
 
 if __name__ == "__main__":

@@ -3,7 +3,13 @@ from sys import exception
 import sys
 from typing import Dict, Set, List
 import csv
-from algorithm_prototype.raptor import Stop, Route, Trip, helper_functions
+from algorithm_prototype.raptor import (
+    Stop,
+    Route,
+    Trip,
+    check_duplicate_stops,
+    helper_functions,
+)
 from pathlib import Path
 
 INF: int = sys.maxsize
@@ -101,6 +107,9 @@ class GTFSReader:
         # -> Read calendar.txt to get service_id -> active days mapping
         service_days = self._read_calendar()
 
+        # Collect non-monotonic trips for reporting
+        non_monotone_trips: List[str] = []
+
         # Step 2: Read routes
         route_data = {}
         with open(self.routes_file, newline="") as f:
@@ -111,9 +120,9 @@ class GTFSReader:
                 route_name = row["route_short_name"]
                 agency_id = row["agency_id"]
                 match agency_id:
-                    case "MetrorailWC":
+                    case "metrorail":
                         mode = 2  # Train
-                    case "MYCITI":
+                    case "MyCiti":
                         mode = 0  # MyCiti Bus
                     case "GABS":
                         mode = 1  # Golden Arrow Bus
@@ -159,30 +168,52 @@ class GTFSReader:
                 trip_id = row["trip_id"]
                 route_id = row["route_id"]
                 service_id = row["service_id"]
+                direction_id = row["direction_id"]
 
                 if trip_id not in trip_stop_times:
                     continue  # Skip trips without stop times
 
-                # Sort stops by stop_sequence
+                # for metrorail trips (mr_*), invert the stop order when direction_id == 1
+                is_mr = trip_id.startswith("mr_")
+                reverse_order = is_mr and direction_id == "1"
+
+                # Sort stops by stop_sequence - reverse for metrorail trips with direction_id == 1
                 stop_times = sorted(
-                    trip_stop_times[trip_id], key=lambda x: x["stop_sequence"]
+                    trip_stop_times[trip_id],
+                    key=lambda x: x["stop_sequence"],
+                    reverse=reverse_order,
                 )
 
-                # Remove duplicate stops on a trip - use only last occurrence.
-                stops_cleaned = {}
-                for st in stop_times:
-                    stops_cleaned[st["stop_id"]] = st  # overwrites earlier occurrence
-                stop_times = list(stops_cleaned.values())
+                # OLD - NOT VALID: Remove duplicate stops on a trip - use only last occurrence.
+                # stops_cleaned = {}
+                # for st in stop_times:
+                #    stops_cleaned[st["stop_id"]] = st  # overwrites earlier occurrence
+                # stop_times = list(stops_cleaned.values())
                 # rebuild ordered list
-                stop_times.sort(key=lambda x: x["stop_sequence"])
+                # stop_times.sort(key=lambda x: x["stop_sequence"], reverse=reverse_order)
+
+                # Keep duplicates to preserve true sequence
                 stop_ids = [st["stop_id"] for st in stop_times]
-                departure_times = []
+                departure_times: List[int] = []
+                via_mask: List[bool] = (
+                    []
+                )  # True for VIA stops - will be estimated later
 
                 # Parse times and mark missing with INF
                 for st in stop_times:
-                    time_str = st["departure_time"].strip()
-                    if time_str == "" or time_str is None:
+                    raw = st["departure_time"]
+                    time_str = (raw or "").strip()
+                    time_str_upper = time_str.upper()
+
+                    # Treat N/A as having INF time (so it won't affect interpolation)
+                    if (time_str in ("N/A", "NA")) or (time_str_upper in ("N/A", "NA")):
                         departure_times.append(INF)
+                        via_mask.append(False)
+                        continue
+                    # VIA = placeholder time also INF -> mask used to interpolate later
+                    if time_str_upper == "VIA":
+                        departure_times.append(INF)
+                        via_mask.append(True)
                         continue
 
                     try:
@@ -190,8 +221,16 @@ class GTFSReader:
                         t = h * 60 + m  # daily mins
                         # Convert HH:MM:SS to mins since midnight on monday (next day -> + (24*60)mins)
                         departure_times.append(t)
+                        via_mask.append(False)
                     except ValueError:
-                        departure_times.append(INF)  # missing times = None
+                        departure_times.append(INF)
+                        via_mask.append(False)
+                        # missing times = None
+
+                # Fill in estimate times for 'VIA' placeholders
+                departure_times = helper_functions._estimate_via_times(
+                    departure_times, via_mask
+                )
 
                 # Interpolate missing times that are "bounded" by known times
                 i = 0
@@ -207,14 +246,17 @@ class GTFSReader:
                         if start >= 0 and end < len(departure_times):
                             t_start = departure_times[start]
                             t_end = departure_times[end]
-                            num_missing = end - start - 1
-                            for cur_stop in range(1, num_missing + 1):
-                                # Linear interpolation — TODO: could be improved with haversine distance
-                                # TODO: handle wrap-around at midnight (e.g., 23:50 to 00:10)
-                                interpolated = t_start + (
-                                    t_end - t_start
-                                ) * cur_stop / (num_missing + 1)
-                                departure_times[start + cur_stop] = int(interpolated)
+                            if t_start != INF and t_end != INF:
+                                num_missing = end - start - 1
+                                for cur_stop in range(1, num_missing + 1):
+                                    # Linear interpolation — TODO: could be improved with haversine distance
+                                    # TODO: handle wrap-around at midnight (e.g., 23:50 to 00:10)
+                                    interpolated = t_start + (
+                                        t_end - t_start
+                                    ) * cur_stop / (num_missing + 1)
+                                    departure_times[start + cur_stop] = int(
+                                        interpolated
+                                    )
                         # leave missing stops as INF if not bounded on both sides (as if the stop is
                         # not served on this trip)
                         i = end
@@ -223,10 +265,40 @@ class GTFSReader:
                     if i >= len(departure_times):
                         break
 
+                # Check monotone increasing times, if not, raise error
+                try:
+                    result_b, problem_stop = helper_functions._check_trip_times(
+                        departure_times
+                    )
+                    if not result_b:
+                        if isinstance(problem_stop, int) and 0 <= problem_stop < len(
+                            stop_ids
+                        ):
+                            bad_stop_id = stop_ids[problem_stop]
+                            bad_seq = stop_times[problem_stop]["stop_sequence"]
+                            prev_t = (
+                                departure_times[problem_stop - 1]
+                                if problem_stop > 0
+                                else None
+                            )
+                            curr_t = departure_times[problem_stop]
+                            non_monotone_trips.append(
+                                f"{trip_id} (route={route_id}, service={service_id}, "
+                                f"stop_id={bad_stop_id}, seq={bad_seq}, idx={problem_stop}, "
+                                f"prev={prev_t}, curr={curr_t})"
+                            )
+                except ValueError as e:
+                    non_monotone_trips.append(
+                        f"{trip_id} (route={route_id}, service={service_id})"
+                    )
+                    # raise ValueError(
+                    #    f"Non-monotonic departure times for trip_id '{trip_id}': {e}"
+                    # ) from e
+
                 # Collect stop_ids for this route
                 if route_id in route_data:
-                    if route_id == "mc_101":
-                        print()
+                    # if route_id == "E1":
+                    #    print()
                     for sid in stop_ids:
                         if sid not in route_data[route_id]["stops_ids"]:
                             route_data[route_id]["stops_ids"].append(sid)
@@ -248,8 +320,8 @@ class GTFSReader:
 
         # Step 5: build Route objects with correct stops and modes
         for route_id, data in route_data.items():
-            if route_id == "mc_101":
-                print()
+            # debug: if route_id == "E1":
+            #    print()
             stop_list = []
             for stop_id in data["stops_ids"]:
                 if stop_id in self.stops:
@@ -257,6 +329,11 @@ class GTFSReader:
                     stop.mode = data["mode"]
                     stop_list.append(stop)
             route = Route(route_id, stop_list, [], name=data["name"])
+            try:
+                check_duplicate_stops(route)
+            except ValueError as e:
+                raise ValueError(f"In route_id '{route_id}': {e}") from e
+
             self.routes[route_id] = route
 
         # Step 6: Attach Trip objects for each active day in schedule
@@ -274,6 +351,18 @@ class GTFSReader:
                     ]
                     trip_day_id = f"{trip_id}_day{day_id}"
                     trip = Trip(trip_day_id, dep_times_for_day)
-                    if route.id == "mc_101":
+                    if route.id == "E1":
                         print()
                     route.add_trip(trip)
+
+        try:
+            out_path = Path(self.gtfs_folder + "non_monotone_trips.txt")
+            if non_monotone_trips:
+                with open(out_path, "w") as f:
+                    f.write(
+                        "# Trips with non-monotonic departure_times (fix in stop_times/trips)\n"
+                    )
+                    for trip in non_monotone_trips:
+                        f.write(trip + "\n")
+        except Exception as e:
+            pass

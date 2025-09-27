@@ -7,6 +7,10 @@ from algorithm_prototype.raptor import (
     raptor_algo,
     helper_functions as hf,
     reconstruct_path_objs,
+    check_duplicate_stops,
+    check_transfer_loops,
+    check_self_loops,
+    check_predecessor_cycles,
 )
 from algorithm_prototype.gtfs_reader import GTFSReader
 from datetime import timedelta
@@ -27,6 +31,12 @@ def test_simple_route():
     route.add_trip(trip_1)
     routes = {route.id: route}
     transfers = []
+
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
+
     arrival_times, path = raptor_algo(stops_dict, routes, transfers, "A", "C", 410, 5)
     assert arrival_times["A"] == 410
     assert arrival_times["B"] == 430
@@ -54,6 +64,11 @@ def test_route_with_simple_transfer():
 
     # Transfer: B -> C (takes 5 minutes)
     transfers = [Transfer(b, c, 5)]
+
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
 
     # Run RAPTOR from A to D, starting at 7:00 (420)
     arrival_times, path = raptor_algo(stops_dict, routes, transfers, "A", "D", 420, 5)
@@ -86,6 +101,11 @@ def test_transfer_time_edge_case():
 
     # Transfer: B -> C (takes exactly 5 minutes)
     transfers = [Transfer(b, c, 5)]
+
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
 
     # Run RAPTOR from A to D, starting at 7:00 (420)
     arrival_times, path = raptor_algo(stops_dict, routes, transfers, "A", "D", 420, 5)
@@ -121,6 +141,11 @@ def test_multiple_competing_routes():
     # Transfers from B and D to the destination E (takes 5 minutes)
     transfers = [Transfer(b, e, 5), Transfer(d, e, 5)]
 
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
+
     # Run RAPTOR from A to E, starting at 7:00 (420)
     arrival_times, path = raptor_algo(stops_dict, routes, transfers, "A", "E", 420, 5)
 
@@ -154,6 +179,11 @@ def test_simple_path_reconstruction():
     transfers = []
 
     start_time = 415  # 6:55 AM (early enough to catch the 7:00 trip)
+
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
 
     # Run RAPTOR from SA to SB
     arrival_times, path = raptor_algo(
@@ -220,6 +250,11 @@ def test_full_path_reconstruction_with_transfer():
     # Start just before the first trip's departure
     start_time = 415
 
+    # check for duplicate stops in route
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
+
     # Run RAPTOR from SA to SD
     arrival_times, path = raptor_algo(
         stops_dict, routes, transfers, "SA", "SD", start_time, 3
@@ -269,7 +304,7 @@ def test_full_path_reconstruction_with_transfer():
     assert trip2_step["trip_id"] == "T201"
 
 
-def test_path_object_hydration_with_transfer_object():
+def test_path_object_creation_with_transfer_object():
     """
     Tests that the path includes the actual Transfer object for transfer segments.
     """
@@ -302,6 +337,11 @@ def test_path_object_hydration_with_transfer_object():
 
     start_time = 415
 
+    # check for duplicate stops in route
+    for route in routes_dict.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
+
     # 2. Run RAPTOR
     _, path_ids = raptor_algo(
         stops_dict, routes_dict, transfers, "SA", "SD", start_time, 3
@@ -309,20 +349,18 @@ def test_path_object_hydration_with_transfer_object():
 
     # 3. Reconstruct Path with Objects
     # Pass the new transfers_map argument
-    hydrated_path = reconstruct_path_objs(
-        path_ids, stops_dict, routes_dict, transfers_map
-    )
+    path_objs = reconstruct_path_objs(path_ids, stops_dict, routes_dict, transfers_map)
 
     # 4. Assertions on Hydrated Path
 
     # Step 2: First Trip Segment (Sanity Check)
-    trip1_step = hydrated_path[1]
+    trip1_step = path_objs[1]
     assert trip1_step["mode"] == "trip"
     assert "transfer_object" not in trip1_step
     assert trip1_step["trip_object"] is trip1
 
     # Step 3: Transfer Segment (SB -> SC)
-    transfer_step = hydrated_path[2]
+    transfer_step = path_objs[2]
     assert transfer_step["mode"] == "transfer"
     assert transfer_step["from_stop_object"] is b
     assert transfer_step["stop_object"] is c
@@ -333,7 +371,7 @@ def test_path_object_hydration_with_transfer_object():
     assert transfer_step["transfer_object"].walking_time == 5
 
     # Step 4: Second Trip Segment (Sanity Check)
-    trip2_step = hydrated_path[3]
+    trip2_step = path_objs[3]
     assert trip2_step["mode"] == "trip"
     assert trip2_step["trip_object"] is trip2
     assert "transfer_object" not in trip2_step
@@ -346,9 +384,11 @@ def test_gtfs_reader():
     routes = gtfs.routes
     trips = gtfs.trips
 
-    # Pick two stops on different routes that are within walking distance
-    stop_ids = list(stops.keys())
-    assert len(stop_ids) >= 2, "Not enough stops in GTFS data."
+    transfers = hf.create_transfers(stops, 200)  # just to test it runs
+
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
 
 
 def test_simple_gtfs_raptor():
@@ -361,9 +401,9 @@ def test_simple_gtfs_raptor():
     stop_ids = list(stops.keys())
     assert len(stop_ids) >= 2, "Not enough stops in GTFS data."
 
-    # For testing, pick two stops on routes
-    source_stop_id = "mr_2"
-    target_stop_id = "mr_72"
+    # For testing, pick two stops on a single route
+    source_stop_id = "mr_15"
+    target_stop_id = "mr_135"
 
     # "mr_1" is never used in routes, so it should be unreachable
     unreachable_stop_id = "mr_1"  # other than walking
@@ -371,13 +411,18 @@ def test_simple_gtfs_raptor():
     # different stop and then taking a route
 
     # create transfers
-    transfers = raptor.helper_functions.create_transfers(stops)
+    transfers = raptor.helper_functions.create_transfers(stops, max_walking_dist=10000)
+    print(transfers)
+
+    for route in routes.values():
+        check_duplicate_stops(route)
+    check_transfer_loops(transfers)
 
     # Run RAPTOR from source to target, starting at 8:00 AM (480 minutes)
     arrival_times, path = raptor_algo(
         stops, routes, transfers, source_stop_id, target_stop_id, 480, 5
     )
     assert arrival_times[source_stop_id] == 480
-    print()
+    assert path != [], "Path should not be empty."
     assert arrival_times[target_stop_id] >= 480
     print()

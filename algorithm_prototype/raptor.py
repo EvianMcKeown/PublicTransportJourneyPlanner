@@ -2,6 +2,7 @@
 # import multiprocessing as mp
 from dataclasses import dataclass, field
 from email.policy import default
+from hmac import new
 from os import name, walk
 import queue
 from re import I
@@ -342,7 +343,7 @@ class helper_functions:
     def detect_local_cycle(
         current_idx: int,
         prev_idx: int,
-        predecessor: List[Dict],
+        predecessor: List[Optional[Dict]],
         max_steps: int = 128,
     ) -> bool:
         """
@@ -354,6 +355,8 @@ class helper_functions:
         while steps < max_steps and cur is not None and predecessor[cur] is not None:
             if cur == current_idx:
                 return True
+            if predecessor[cur] is None:
+                break
             cur = predecessor[cur]["prev_idx"]
             steps += 1
         return False
@@ -379,7 +382,7 @@ class helper_functions:
             - longer cycles detected via bounded walk
         """
 
-        # Guard: 2-cycle
+        # Prevent: 2-cycle
         pred_prev = predecessor[prev_idx]
         if pred_prev is not None and pred_prev.get("prev_idx") == current_idx:
             if debug:
@@ -395,7 +398,7 @@ class helper_functions:
                 )
             return False
 
-        # Guard: longer cycle
+        # Prevent: longer cycle
         if helper_functions.detect_local_cycle(current_idx, prev_idx, predecessor):
             if debug:
                 # raise ValueError(
@@ -492,19 +495,25 @@ def raptor_algo(
         raise ValueError("Origin not a valid Stop.")
     source_idx = id_to_idx[source_id]
 
+    # store predecessors for path reconstruction
+    # each entry is a dict per round with keys: prev_idx, arrival_time, mode, route_id, trip_id, transfer_time
+    # or None if no predecessor (initially)
+    predecessor_layers: List[List[Optional[Dict]]] = [
+        [None] * n for _ in range(max_rounds + 1)
+    ]
+    improved_round: List[int] = [-1] * n  # last round a stop was improved
+
     best[source_idx] = departure_time
     prev[source_idx] = departure_time
     cur[source_idx] = departure_time
+    # ↓ source known at round 0 ↓
+    improved_round[source_idx] = 0
+    predecessor_layers[0][source_idx] = None
 
     # marked stops: those improved in the last round (init to only source)
     marked = [False] * n
     marked[source_idx] = True
     marked_list = [source_idx]
-
-    # store predecessors for path reconstruction
-    # each entry is a dict with keys: prev_idx, arrival_time, mode, route_id, trip_id, transfer_time
-    # or None if no predecessor (initially)
-    predecessor: List[Optional[Dict]] = [None] * n
 
     # main round
     for k in range(1, max_rounds + 1):
@@ -554,6 +563,9 @@ def raptor_algo(
                     # can't use this trip from any marked stop
                     continue
 
+                # stop where we boarded
+                board_stop_idx = stop_indices[boarded_at]
+
                 # move along trip from boarded_at stop
                 # -> start look form stop after the boarding_at stop
                 for pos2 in range(boarded_at + 1, num_stops_in_route):
@@ -569,27 +581,36 @@ def raptor_algo(
                     if prev_time_same_trip != INF and trip_time < prev_time_same_trip:
                         continue
 
-                    if trip_time < cur[stop_idx2]:
+                    # commit only if both this round and overall best improved
+                    if trip_time < cur[stop_idx2] and trip_time < best[stop_idx2]:
                         if stop_idx2 == source_idx and trip_time > departure_time:
                             # Don't overwrite source with later time
                             continue
 
-                        # set predecessor safely
+                        # predecessor is the boarding stop (not the immediate previous stop)
                         if helper_functions.safe_set_predecessor(
                             stop_idx2,
-                            prev_stop_idx,
+                            board_stop_idx,
                             trip_time,
                             "trip",
                             rid,
                             trip.id,
                             None,
-                            predecessor,
+                            predecessor_layers[k],  # write to this rounds layer
                             idx_to_id,
                             debug,
                         ):
+                            # add boarding metadata to help reconstruction
+                            # TODO: handle predecessor_layers being None
+                            predecessor_layers[k][stop_idx2]["board_pos"] = boarded_at
+                            predecessor_layers[k][stop_idx2]["alight_pos"] = pos2
+
                             # update times
                             cur[stop_idx2] = trip_time
-                            best[stop_idx2] = min(best[stop_idx2], trip_time)
+                            # best[stop_idx2] = min(best[stop_idx2], trip_time)
+                            best[stop_idx2] = trip_time
+                            # mark which round a stop was last improved
+                            improved_round[stop_idx2] = k
 
                             if not marked[stop_idx2]:
                                 marked[stop_idx2] = True
@@ -603,13 +624,17 @@ def raptor_algo(
                                 and best[target_idx] != INF
                             ):
                                 check_predecessor_cycles(
-                                    predecessor, idx_to_id, target_idx, source_idx
+                                    predecessor_layers[k],
+                                    idx_to_id,
+                                    target_idx,
+                                    source_idx,
                                 )
 
         # 3: Look at foot-paths (transfers) — since we have no chained walks and
         # we are using a fixed distance based formula for walking time, all we
         # have to do is 'walk' through (pardon the pun) each transfer.
-        for p in marked_list:
+        marked_list_copy = list(marked_list)  # avoid modification during iteration
+        for p in marked_list_copy:
             arr_p = cur[p]
             if arr_p == INF:
                 continue
@@ -619,7 +644,7 @@ def raptor_algo(
                 walk_time = max(walk_time, MIN_TRANSFER_TIME)
                 new_arrival = arr_p + walk_time
 
-                if new_arrival < cur[v]:
+                if new_arrival < cur[v] and new_arrival < best[v]:
                     if helper_functions.safe_set_predecessor(
                         v,
                         p,
@@ -628,12 +653,15 @@ def raptor_algo(
                         None,
                         None,
                         walk_time,
-                        predecessor,
+                        predecessor_layers[k],  # write to this round's layer
                         idx_to_id,
                         debug,
                     ):
                         cur[v] = new_arrival
-                        best[v] = min(best[v], new_arrival)
+                        best[v] = new_arrival
+                        improved_round[v] = (
+                            k  # mark which round a stop was last improved
+                        )
 
                         # transfers can mark a stop not reached by a trip
                         if not marked[v]:
@@ -644,7 +672,7 @@ def raptor_algo(
                         if debug and target_idx is not None and best[target_idx] != INF:
                             # debug: early cycle check when target reached
                             check_predecessor_cycles(
-                                predecessor, idx_to_id, target_idx, source_idx
+                                predecessor_layers[k], idx_to_id, target_idx, source_idx
                             )
 
                     # Optional: early cycle check once the target is reachable in this round
@@ -673,17 +701,24 @@ def raptor_algo(
     target_idx = id_to_idx[target_id]
 
     # final cycle check before reconstructing path
-    check_self_loops(predecessor, idx_to_id)
-    check_predecessor_cycles(predecessor, idx_to_id, target_idx, source_idx)
+    # check_self_loops(predecessor, idx_to_id)
+    # check_predecessor_cycles(predecessor, idx_to_id, target_idx, source_idx)
 
-    journey = reconstruct_path(predecessor, idx_to_id, target_idx, source_idx, result)
+    journey = reconstruct_path(
+        predecessor_layers, improved_round, idx_to_id, target_idx, source_idx, result
+    )
 
     return result, journey
 
 
 def reconstruct_path(
-    predecessor, idx_to_id, target_idx, source_idx, result: Dict[str, int]
-):
+    predecessor_layers: List[List[Optional[Dict]]],
+    improved_round: List[int],
+    idx_to_id: Dict[int, str],
+    target_idx: int,
+    source_idx: int,
+    result: Dict[str, int],
+) -> List[Dict[str, Any]]:
     """TODO: _summary_
 
     Args:
@@ -696,37 +731,39 @@ def reconstruct_path(
     Returns:
         _type_: _description_
     """
-    path: List[Dict] = []
-    prev_2 = None
-    prev = None
+    path: List[Dict[str, Any]] = []
+    # prev_2 = None
+    # prev = None
     current = target_idx
     visited = set()  # to detect cycles
 
     # trace from target back to source
-    while current != source_idx and predecessor[current] is not None:
-        if current in visited:
-            # cycle detected, return empty path
-            empty_path: List[Dict] = []
-            raise ValueError(
-                f"Cycle detected during path reconstruction at stop {idx_to_id[current]}. prev: {prev}, prev_2: {prev_2}"
-            )
+    while current != source_idx:
+        r = improved_round[current]
+        if r < 0:
+            return []  # no path found (shouldn't happen due to earlier checks)
+        predecessor = predecessor_layers[r][current]
+        if predecessor is None:
+            return []  # no predecessor found (shouldn't happen due to earlier checks)
+        key = (current, r)
+        if key in visited:
+            return []  # return empty path on cycle detection
+        visited.add(key)
 
-        visited.add(current)
-        step = predecessor[current].copy()
+        step = dict(predecessor)  # copy to avoid mutating original
         step["stop_id"] = idx_to_id[current]
         step["from_stop_id"] = idx_to_id[step["prev_idx"]]
         path.append(step)
-        prev_2 = prev
-        prev = current
+        # prev_2 = prev
+        # prev = current
         current = step["prev_idx"]
 
     # If the trace stops before the source, something went wrong, or the source
     # was reached via a transfer that wasn't recorded properly (which is unlikely
     # for the initial source stop). We rely on the initial check for path existence.
-    if current != source_idx:
-        # Path trace failed to reach the source, return empty
-        empty_path: List[Dict] = []
-        return empty_path
+    # if current != source_idx:
+    #     empty_path: List[Dict] = []
+    #     return empty_path
 
     # add source stop as starting point
     path.append(

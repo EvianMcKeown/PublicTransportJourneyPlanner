@@ -402,8 +402,8 @@ def test_simple_gtfs_raptor():
     assert len(stop_ids) >= 2, "Not enough stops in GTFS data."
 
     # For testing, pick two stops on a single route
-    source_stop_id = "mr_15"
-    target_stop_id = "mr_135"
+    source_stop_id = "mr_135"
+    target_stop_id = "mr_15"
 
     # "mr_1" is never used in routes, so it should be unreachable
     unreachable_stop_id = "mr_1"  # other than walking
@@ -412,7 +412,7 @@ def test_simple_gtfs_raptor():
 
     # create transfers
     transfers = raptor.helper_functions.create_transfers(stops, max_walking_dist=10000)
-    print(transfers)
+    # print(transfers)
 
     for route in routes.values():
         check_duplicate_stops(route)
@@ -422,7 +422,12 @@ def test_simple_gtfs_raptor():
     arrival_times, path = raptor_algo(
         stops, routes, transfers, source_stop_id, target_stop_id, 480, 5
     )
-    assert arrival_times[source_stop_id] == 480
+    origin_time = arrival_times[source_stop_id]
+    assert origin_time == 480
     assert path != [], "Path should not be empty."
-    assert arrival_times[target_stop_id] >= 480
-    print()
+    target_time = arrival_times[target_stop_id]
+    assert target_time >= 480
+    assert target_time == path[len(path) - 1]["arrival_time"]
+    assert GTFSReader.mins_to_str(origin_time) == "Mon 08:00"
+    assert GTFSReader.mins_to_str(target_time) == "Mon 09:08"
+    # print()

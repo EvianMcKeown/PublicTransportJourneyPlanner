@@ -1,7 +1,7 @@
+from typing import Dict, Set, List, Tuple
 from os import read
 from sys import exception
 import sys
-from typing import Dict, Set, List
 import csv
 from algorithm_prototype.raptor import (
     Stop,
@@ -46,6 +46,38 @@ class GTFSReader:
         self._read_stops()
         self._read_routes_trips_stoptimes()
         # ...
+
+    @staticmethod
+    def mins_to_day_hour_min(total_mins: int) -> Tuple[int, int, int]:
+        """
+        Convert absolute minutes since Monday 00:00 into (day, hour, minute).
+        day: 0=Monday, 1=Tuesday, ..., 6=Sunday
+        Returns (-1, -1, -1) for INF/None.
+        """
+        if total_mins is None or total_mins == INF:
+            return -1, -1, -1
+
+        MIN_PER_DAY = 24 * 60
+        WEEK_MINS = 7 * MIN_PER_DAY
+
+        total = total_mins % WEEK_MINS  # wrap around week
+        day = (total // MIN_PER_DAY) % 7
+        hour = (total % MIN_PER_DAY) // 60
+        minute = (total % MIN_PER_DAY) % 60
+        return day, hour, minute
+
+    @staticmethod
+    def mins_to_str(total_mins: int) -> str:
+        """
+        Format minutes since Monday 00:00 as 'Mon HH:MM'. INF/None -> 'N/A'.
+        """
+        if total_mins is None or total_mins == INF:
+            return "N/A"
+        day, hh, mm = GTFSReader.mins_to_day_hour_min(total_mins)
+        day_names = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        if 0 <= day <= 6:
+            return f"{day_names[day]} {hh:02d}:{mm:02d}"
+        return f"{hh:02d}:{mm:02d}"
 
     def _read_calendar(self) -> Dict[str, List[int]]:
         """Reads the calendar.txt file and returns a dictionary mapping service_id to list of active days (as offsets).

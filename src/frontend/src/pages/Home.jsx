@@ -8,6 +8,8 @@ export default function Home() {
     const [lastEnd, setLastEnd] = useState(null);
     const [toastMessage, setToastMessage] = useState(null);
     const [routeInfo, setRouteInfo] = useState(null); // Stores time & distance
+    const [ptJourney, setPtJourney] = useState(null);
+    const [planning, setPlanning] = useState(false)
     const navigate = useNavigate();
 
     let autocompleteStart;
@@ -15,6 +17,80 @@ export default function Home() {
     let directionsService;
     let directionsRenderer;
 
+    // Helper: map JS day (0=Sun..6=Sat) to backend (0=Mon..6=Sun)
+    const getBackendDay = () => {
+        const js = new Date().getDay(); // 0..6
+        return (js + 6) % 7;
+    };
+    // Helper: format minutes to 'Mon HH:MM'
+    const minsToStr = (total) => {
+        if (total == null) return "";
+        const names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const day = Math.floor(total / 1440) % 7;
+        const minsInDay = ((total % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(minsInDay / 60)).padStart(2, "0");
+        const mm = String(minsInDay % 60).padStart(2, "0");
+        return `${names[day]} ${hh}:${mm}`;
+    };
+    // Call Django /api/plan/ using the Start/End input values as GTFS stop IDs
+    const planPublicTransport = async () => {
+        const sourceId = document.getElementById("start")?.value?.trim();
+        const targetId = document.getElementById("end")?.value?.trim();
+        if (!sourceId || !targetId) {
+            showToast("Enter valid stop IDs (e.g., GABS001, GABS006).", true);
+            return;
+        }
+        setPlanning(true);
+        setPtJourney(null);
+        try {
+            const now = new Date();
+            const day = getBackendDay();
+            const hh = String(now.getHours()).padStart(2, "0");
+            const mm = String(now.getMinutes()).padStart(2, "0");
+            const time = `${hh}:${mm}`;
+
+            const API_BASE = import.meta.env.DEV ? "http://127.0.0.1:8000" : "";
+            const resp = await fetch(`${API_BASE}/api/plan/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    source_id: sourceId,
+                    target_id: targetId,
+                    day,
+                    time,
+                    max_rounds: 5,
+                }),
+            });
+
+            // Read text first, then try JSON if content-type is JSON
+            const contentType = resp.headers.get("content-type") || "";
+            const text = await resp.text();
+            let data = null;
+            if (contentType.includes("application/json") && text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    // ignore parse error; fall back to text
+                }
+            }
+
+            if (!resp.ok) {
+                const msg = (data && (data.detail || data.error)) || text || `HTTP ${resp.status}`;
+                showToast(msg, true);
+                return;
+            }
+            setPtJourney({
+                earliest_arrival: data?.earliest_arrival,
+                path_objs: data?.path_objs || [],
+            });
+            showToast("Public transport plan ready.");
+        } catch (e) {
+            console.error(e);
+            showToast("Error contacting journey planner.", true);
+        } finally {
+            setPlanning(false);
+        }
+    };
 
     const showToast = (message, isError = false) => {
         setToastMessage({ text: message, error: isError });
@@ -170,6 +246,7 @@ export default function Home() {
                     onSubmit={(e) => {
                         e.preventDefault();
                         calculateAndDisplayRoute();
+                        planPublicTransport();
                     }}
                 >
                     <input
@@ -271,6 +348,60 @@ export default function Home() {
                             )}
                         </div>
                     )}
+                    <div className="mt-6 p-4 bg-gray-800 rounded">
+                        <h2 className="text-lg font-bold mb-2">Public Transport</h2>
+                        {!ptJourney && <p className="text-sm text-gray-300">Search to see an itinerary.</p>}
+                        {ptJourney && (
+                            <div className="space-y-2">
+                                <p className="text-sm">
+                                    Earliest arrival: <span className="font-semibold">{minsToStr(ptJourney.earliest_arrival)}</span>
+                                </p>
+                                <ol className="list-decimal list-inside space-y-2">
+                                    {ptJourney.path_objs.map((step, idx) => {
+                                        const atStr = minsToStr(step.arrival_time);
+                                        if (step.mode === "start") {
+                                            return (
+                                                <li key={idx} className="text-sm">
+                                                    Start at {step.stop?.name || step.stop_id} at {atStr}
+                                                </li>
+                                            );
+                                        }
+                                        if (step.mode === "transfer") {
+                                            return (
+                                                <li key={idx} className="text-sm">
+                                                    Walk from {step.from_stop?.name || step.from_stop_id} to{" "}
+                                                    {step.stop?.name || step.stop_id} ({step.transfer_time} min). Arrive {atStr}.
+                                                </li>
+                                            );
+                                        }
+                                        if (step.mode === "trip") {
+                                            return (
+                                                <li key={idx} className="text-sm">
+                                                    Board {step.route?.id || step.route_id}
+                                                    {step.trip?.id ? ` (${step.trip.id})` : ""} at{" "}
+                                                    {step.board_stop?.name || step.board_stop_id}. Disembark at{" "}
+                                                    {step.disembark_stop?.name || step.disembark_stop_id}. Arrive {atStr}.
+                                                </li>
+                                            );
+                                        }
+                                        return (
+                                            <li key={idx} className="text-sm">
+                                                [{step.mode}] arrive {atStr} at {step.stop?.name || step.stop_id}
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            className="mt-3 bg-[#001f4d] py-2 px-3 rounded hover:bg-[#003366]"
+                            onClick={planPublicTransport}
+                            disabled={planning}
+                        >
+                            {planning ? "Planning..." : "Replan PT"}
+                        </button>
+                    </div>
                 </aside>
 
                 {/* Map + Ads */}

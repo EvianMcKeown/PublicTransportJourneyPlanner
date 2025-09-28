@@ -11,6 +11,8 @@ from rest_framework.serializers import (
     CharField,
     ValidationError,
 )
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from typing import Any, Dict
 from rest_framework.views import APIView
 from .raptor_engine import get_engine, to_mins
@@ -81,6 +83,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # -------------------------------
 # ROUTE
 # -------------------------------
+@method_decorator(csrf_exempt, name="dispatch")
 class PlanJourneyView(APIView):
     def post(self, request, *args, **kwargs):
         ser = PlanRequestSerializer(data=request.data)

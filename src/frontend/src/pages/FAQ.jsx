@@ -9,17 +9,13 @@ export default function FAQ() {
         {
             question: "How do I plan a journey?",
             answer:
-                "Enter your starting point and destination in the search fields. Then select your preferred travel time. The planner will generate the best routes for you.",
+                "Enter your starting point and destination in the search fields. Select your route preferences (Optional). The planner will generate the best routes for you.",
         },
         {
-            question: "Can I see real-time bus and train updates?",
-            answer: "No, but it will notify you if you are travelling during peak hours.",
+            question: "Can I see save routes so that i can view them again?",
+            answer: "Yes, after searcging for a route click the Save Current Route button on the left of your screen. That specifc route will the be saved and you can access it via the saved routes page which you can access from the button on your header",
         },
-        {
-            question: "Do I need an account to use the planner?",
-            answer:
-                "No account is required to plan a journey. However, if you create one, you can save frequent trips and receive personalized notifications.",
-        },
+
         {
             question: "Can I use the planner on my phone?",
             answer: "Yes, the website is fully mobile-friendly.",

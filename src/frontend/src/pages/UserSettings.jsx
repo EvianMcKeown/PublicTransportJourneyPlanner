@@ -62,7 +62,7 @@ export default function UserSettings() {
         e.preventDefault();
         try {
             const res = await fetch("http://localhost:8000/api/user/change_password/", {
-                method: "POST",
+                method: "PUT", // ✅ backend expects PUT
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -74,12 +74,10 @@ export default function UserSettings() {
             console.log("Password change response:", data);
 
             if (res.ok) {
-                setMessage("Password changed ✅ Please log in again");
-                localStorage.removeItem("access");
-                localStorage.removeItem("refresh");
-                navigate("/login");
+                // ✅ Show success message but keep logged in
+                setMessage("✅ Password changed successfully!");
+                setPasswords({ old_password: "", new_password: "" }); // clear form
             } else {
-                // Display detailed error if provided
                 setMessage(
                     data.detail ||
                     data.error ||

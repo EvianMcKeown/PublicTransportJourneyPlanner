@@ -36,7 +36,7 @@ urlpatterns = [
     path("user/", UserDetailView.as_view(), name="user-detail"),
     path("user/change_password/", ChangePasswordView.as_view(), name="change-password"),
     # Routes & Preferences
-    path("route/", PlanJourneyView.as_view(), name="get_route"),
+    path("plan/", PlanJourneyView.as_view(), name="plan-journey"),
     path("preferences/", update_preferences, name="update_preferences"),
     # All registered API endpoints
     path("", include(router.urls)),

@@ -452,10 +452,6 @@ def raptor_algo(
     if debug:
         # detect accidental duplicates or bad trip times before running
         for r in routes.values():
-            try:
-                check_duplicate_stops(r)
-            except ValueError as e:
-                raise ValueError(f"In route_id '{r.id}': {e}") from e
             for t in r.trips:
                 try:
                     helper_functions._check_trip_times(t.departure_times)
@@ -565,6 +561,7 @@ def raptor_algo(
 
                 # stop where we boarded
                 board_stop_idx = stop_indices[boarded_at]
+                board_time = trip.departure_times[boarded_at]
 
                 # move along trip from boarded_at stop
                 # -> start look form stop after the boarding_at stop
@@ -579,6 +576,10 @@ def raptor_algo(
                     # skip backward in time segments in the same trip
                     prev_time_same_trip = trip.departure_times[pos2 - 1]
                     if prev_time_same_trip != INF and trip_time < prev_time_same_trip:
+                        continue
+
+                    # NEW: enforce time >= boarding time to avoid drops after INF gaps/misalignment
+                    if trip_time < board_time:
                         continue
 
                     # commit only if both this round and overall best improved
@@ -603,7 +604,9 @@ def raptor_algo(
                             # add boarding metadata to help reconstruction
                             # TODO: handle predecessor_layers being None
                             predecessor_layers[k][stop_idx2]["board_pos"] = boarded_at
-                            predecessor_layers[k][stop_idx2]["alight_pos"] = pos2
+                            predecessor_layers[k][stop_idx2]["disembark_pos"] = pos2
+                            predecessor_layers[k][stop_idx2]["round"] = k
+                            predecessor_layers[k][stop_idx2]["prev_round"] = k - 1
 
                             # update times
                             cur[stop_idx2] = trip_time
@@ -657,6 +660,10 @@ def raptor_algo(
                         idx_to_id,
                         debug,
                     ):
+                        predecessor_layers[k][v]["round"] = k
+                        predecessor_layers[k][v][
+                            "prev_round"
+                        ] = k  # transfers stay in same round
                         cur[v] = new_arrival
                         best[v] = new_arrival
                         improved_round[v] = (
@@ -737,26 +744,39 @@ def reconstruct_path(
     current = target_idx
     visited = set()  # to detect cycles
 
+    # start from the round where target was last improved
+    r = improved_round[target_idx]
+    if r < 0:
+        return []  # no path found
+
     # trace from target back to source
     while current != source_idx:
-        r = improved_round[current]
-        if r < 0:
-            return []  # no path found (shouldn't happen due to earlier checks)
-        predecessor = predecessor_layers[r][current]
-        if predecessor is None:
+        pred = (
+            predecessor_layers[r][current] if 0 <= r < len(predecessor_layers) else None
+        )
+        if pred is None:
             return []  # no predecessor found (shouldn't happen due to earlier checks)
+
         key = (current, r)
         if key in visited:
-            return []  # return empty path on cycle detection
+            # cycle detected
+            raise ValueError(
+                f"Cycle detected during path reconstruction at stop {idx_to_id[current]} in round {r}."
+            )
         visited.add(key)
 
-        step = dict(predecessor)  # copy to avoid mutating original
+        step = dict(pred)  # copy to avoid mutating original
         step["stop_id"] = idx_to_id[current]
         step["from_stop_id"] = idx_to_id[step["prev_idx"]]
         path.append(step)
         # prev_2 = prev
         # prev = current
-        current = step["prev_idx"]
+
+        next_idx = step.get("prev_idx")
+        next_round = step.get("prev_round", r - 1 if step.get("mode") == "trip" else r)
+
+        current = next_idx
+        r = next_round
 
     # If the trace stops before the source, something went wrong, or the source
     # was reached via a transfer that wasn't recorded properly (which is unlikely

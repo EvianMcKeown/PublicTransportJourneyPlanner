@@ -1,31 +1,96 @@
-# CSC3003S Capstone Project
-- [ ] Choose a self-explaining name for your project.
+# RAPTOR Journey Planner
+
+**CSC3003S Capstone Project — Stage 4: Implementation and Testing**
+
+A Django-based public transport journey planning web application built on the [RAPTOR algorithm](https://www.microsoft.com/en-us/research/wp-content/uploads/2012/01/raptor_alenex.pdf) for fast and efficient transit routing.  
+
+---
 
 ## Description
-- [ ] Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Project status
-- [X] Stage 1 - Project Startup
-- [X] Stage 2 - Planning and Modelling
-- [ ] Stage 3 - Prototype
-- [ ] Stage 4 - Implementation and Testing
+The RAPTOR Journey Planner enables users to plan trips across a public transport network efficiently.  
+It uses **GTFS data** and the **RAPTOR (Round-Based Public Transit Routing) algorithm** to compute optimal routes between stops, considering transfers and travel times.  
+
+Unlike traditional shortest-path algorithms (e.g., Dijkstra’s), RAPTOR works in **rounds**, making it both **faster and more scalable** for journey planning across large transport networks.
+
+### Features
+- Efficient journey planning using the RAPTOR algorithm.  
+- Django-based web backend for queries and routing.  
+- Integration with GTFS data (`trips.txt`, `stop_times.txt`, etc.).  
+- REST API endpoint to request journeys (source stop → destination stop).  
+- Filtering and cleaning scripts for GTFS preprocessing.  
+
+---
+
+## Project Status
+
+- ✅ **Stage 1** – Project Startup  
+- ✅ **Stage 2** – Planning and Modelling  
+- ✅ **Stage 3** – Prototype  
+- 🔄 **Stage 4** – Implementation and Testing (current)  
+
+---
 
 ## Badges
-- [ ] On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)  
+[![Django](https://img.shields.io/badge/Django-5.0-green.svg)](https://www.djangoproject.com/)  
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)  
+
+---
 
 ## Visuals
-- [ ] Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+
+(Include screenshots or GIFs here once the frontend is ready. For now, example API request/response logs could be shown.)  
+
+
+---
 
 ## Installation
-- [ ] Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-- [ ] Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Requirements
+- Python 3.7+  
+- Django 5.0+  
+- GTFS dataset (CSV files)  
 
-## Roadmap
-- [ ] If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Setup
+```bash
+# Clone the repo
+git clone https://gitlab.cs.uct.ac.za/mckevi001/capstone-project-MCKEVI001-JSSBEN002-NDXSHA111.git
+cd raptor-journey-planner
 
-## Authors and acknowledgment
-- [ ] Add project members.
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
 
+# Install dependencies
+pip install -r requirements.txt
 
+# Apply database migrations
+python manage.py migrate
+
+# Load GTFS data into the database (scripts provided in /scripts)
+python scripts/load_gtfs.py
+
+# Run the server
+python manage.py runserver
+```
+
+---
+
+# Usage
+
+### Start the Django development server
+```bash
+python manage.py runserver
+```
+
+### Access the web app
+```bash
+http://localhost:8000
+```
+
+### Query journey plans via REST API
+```bash
+GET /api/journey?source=<stop_id>&target=<stop_id>&departure_time=<HH:MM>
+```

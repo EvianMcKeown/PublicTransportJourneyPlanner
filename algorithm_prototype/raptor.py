@@ -161,7 +161,7 @@ class helper_functions:
         return helper_functions.haversine(lat_a, lon_a, lat_b, lon_b) <= dist
 
     @staticmethod
-    def _parse_time_mins(time_str: str) -> int | Literal["VIA"]:
+    def parse_time_mins(time_str: str) -> int | Literal["VIA"]:
         if not time_str or time_str.strip() == "" or time_str.strip().upper() == "N/A":
             return INF
         if time_str.strip().upper() == "VIA":

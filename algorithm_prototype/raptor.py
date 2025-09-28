@@ -880,7 +880,10 @@ def reconstruct_path_objs(
     routes_dict: Dict[str, "Route"],
     transfers_dict: Dict[Tuple[str, str], Transfer],
 ) -> List[Dict[str, Any]]:
-    """Convert path with IDs to path with Stop, Route, and Trip objects.
+    """
+    Convert the ID-based path returned by raptor_algo into a path enriched with
+    Stop/Route/Trip/Transfer objects. For trip steps, boarding/disembark stops
+    are derived from board_pos and disembark_pos (indices into route.stops).
 
     Args:
         path (List[Dict[str, Any]]): Path returned by RAPTOR with stop and route IDs.
@@ -888,92 +891,70 @@ def reconstruct_path_objs(
         routes_dict (Dict[str, Route]): Dictionary of all Route objects by ID.
 
     Returns:
-        List[Dict[str, Any]]: Path with Stop and Route object references.
+        List[Dict[str, Any]]: Path with Stop, Route, Trip, and Transfer object references.
+
+
     """
     path_objs: List[Dict[str, Any]] = []
+
     for step in path:
-        new_step = step.copy()
+        new_step = dict(step)  # shallow copy
 
-        # Find Stop objects
-        # stop_id is the arrival stop for this step
-        if new_step.get("stop_id") in stops_dict:
-            new_step["stop_object"] = stops_dict[new_step["stop_id"]]
+        stop_id = new_step.get("stop_id")
+        from_stop_id = new_step.get("from_stop_id")
 
-        # from_stop_id is the departure stop for this step
-        if new_step.get("from_stop_id") in stops_dict:
-            new_step["from_stop_object"] = stops_dict[new_step["from_stop_id"]]
+        if stop_id in stops_dict:
+            new_step["stop_object"] = stops_dict[stop_id]
+        if from_stop_id in stops_dict:
+            new_step["from_stop_object"] = stops_dict[from_stop_id]
 
-        # Find Route and Trip objects (only for trip steps)
-        if new_step["mode"] == "trip":
-            route_id = new_step.get("route_id")
-            trip_id = new_step.get("trip_id")
+        mode = new_step.get("mode")
 
-            if route_id in routes_dict:
-                route = routes_dict[route_id]
+        if mode == "trip":
+            rid = new_step.get("route_id")
+            tid = new_step.get("trip_id")
+            route = routes_dict.get(rid)
+            if route is not None:
                 new_step["route_object"] = route
+                if tid:
+                    trip_obj = next((t for t in route.trips if t.id == tid), None)
+                    if trip_obj is not None:
+                        new_step["trip_object"] = trip_obj
 
-                # Find specific Trip object within route
-                if trip_id:
-                    trip = next((t for t in route.trips if t.id == trip_id), None)
-                    new_step["trip_object"] = trip
+                # Use board_pos / disembark_pos to resolve boarding/disembark stops
+                board_pos = new_step.get("board_pos")
+                disembark_pos = new_step.get("disembark_pos")
 
-        # Find Transfer object (only for transfer steps)
-        elif new_step["mode"] == "transfer":
-            from_id = new_step.get("from_stop_id")
-            to_id = new_step.get("stop_id")
+                if isinstance(board_pos, int) and 0 <= board_pos < len(route.stops):
+                    board_stop_obj = route.stops[board_pos]
+                    new_step["board_stop_object"] = board_stop_obj
+                    new_step["board_stop_id"] = board_stop_obj.id
+                else:
+                    # fallback: from_stop_id
+                    if from_stop_id in stops_dict:
+                        new_step["board_stop_object"] = stops_dict[from_stop_id]
+                        new_step["board_stop_id"] = from_stop_id
 
-            if from_id and to_id:
-                transfer_key = (from_id, to_id)
-                if transfer_key in transfers_dict:
-                    new_step["transfer_object"] = transfers_dict[transfer_key]
+                if isinstance(disembark_pos, int) and 0 <= disembark_pos < len(
+                    route.stops
+                ):
+                    disembark_stop_obj = route.stops[disembark_pos]
+                    new_step["disembark_stop_object"] = disembark_stop_obj
+                    new_step["disembark_stop_id"] = disembark_stop_obj.id
+                else:
+                    # fallback: stop_id
+                    if stop_id in stops_dict:
+                        new_step["disembark_stop_object"] = stops_dict[stop_id]
+                        new_step["disembark_stop_id"] = stop_id
+
+        elif mode == "transfer":
+            if from_stop_id and stop_id:
+                tr_key = (from_stop_id, stop_id)
+                tr_obj = transfers_dict.get(tr_key)
+                if tr_obj is not None:
+                    new_step["transfer_object"] = tr_obj
+                    new_step.setdefault("transfer_time", tr_obj.walking_time)
 
         path_objs.append(new_step)
+
     return path_objs
-
-
-if __name__ == "__main__":
-    from gtfs_reader import GTFSReader
-
-    gtfs = GTFSReader()
-    stops = gtfs.stops
-    routes = gtfs.routes
-    trips = gtfs.trips
-
-    # Example Stops
-    a = Stop("Greenpoint", 2, -33.918, 18.423)
-    b = Stop("Gardens", 2, -33.935, 18.413)
-    c = Stop("Observatory", 2, -34.05, 18.35)
-
-    # stops = {s.id: s for s in [a, b, c]}
-    # stops = [a, b, c]
-
-    # Example Routes
-    # route_example = Route("A", [a, b, c])
-    # route_example.add_trip(Trip("A-1", [7 * 60, 7 * 60 + 10, 7 * 60 + 30]))
-    # route_example.add_trip(Trip("A-2", [7 * 60 + 20, 7 * 60 + 30, 7 * 60 + 50]))
-
-    # routes = {route_example.id: route_example}
-
-    # Transfers
-    # determine if walkable
-    # transfers: List[Transfer] = []
-    # for s1 in stops.values():
-    #    for s2 in stops.values():
-    #        if s1.id != s2.id:
-    #            distance = helper_functions.haversine(s1.lat, s1.lon, s2.lat, s2.lon)
-    #            # print(distance)
-    #            if distance <= MAX_WALK_DIST:
-    #                walk_time_minutes = max(
-    #                    MIN_TRANSFER_TIME, ceil(distance / WALKING_SPEED)
-    #                )
-    #                transfers.append(Transfer(s1, s2, walk_time_minutes))
-
-    # result = raptor_algo(
-    #    stops, routes, transfers, "Greenpoint", "Observatory", 7 * 60, 5
-    # )
-
-    # print(transfers)
-
-    # print("Earliest arrivals (mins since Monday 00:00):")
-    # for sid, t in result.items():
-    #    print(f"{sid}: {t}")

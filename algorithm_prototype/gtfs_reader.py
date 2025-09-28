@@ -10,6 +10,8 @@ from algorithm_prototype.raptor import (
     Trip,
     check_duplicate_stops,
     helper_functions,
+    Transfer,
+    reconstruct_path_objs,
 )
 from pathlib import Path
 

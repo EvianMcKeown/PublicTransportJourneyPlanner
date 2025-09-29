@@ -111,14 +111,22 @@ class GTFSReader:
         """
         for trip_id, trip_info in self.trips.items():
             stop_times: List[int] = self.trips[trip_id].departure_times
-            # List of times for this trip
-
             for day_id in active_days:
                 day_offset = day_id * 24 * 60
-                departure_times = [t + day_offset for t in departure_times]
+                # Add trip for this day
+                departure_times_for_day = [t + day_offset for t in departure_times]
                 trip_day_id = f"{trip_id}_day{day_id}"
-                trip = Trip(trip_day_id, departure_times)
+                trip = Trip(trip_day_id, departure_times_for_day)
                 cur_route.add_trip(trip)
+                # If it's Monday, also add trip for next week's Monday
+                if day_id == 0:
+                    next_week_offset = 7 * 24 * 60
+                    departure_times_next_monday = [
+                        t + day_offset + next_week_offset for t in departure_times
+                    ]
+                    trip_day_id_next = f"{trip_id}_day{day_id}_nextweek"
+                    trip_next = Trip(trip_day_id_next, departure_times_next_monday)
+                    cur_route.add_trip(trip_next)
 
     @staticmethod
     def _align_by_occurrence(
@@ -374,6 +382,16 @@ class GTFSReader:
                     trip_day_id = f"{trip['trip_id']}_day{day_id}"
                     trip_obj = Trip(trip_day_id, dep_times_for_day)
                     route.add_trip(trip_obj)
+                    # If Monday, also add next week's Monday
+                    if day_id == 0:
+                        next_week_offset = WEEK_MINS
+                        dep_times_next_monday = [
+                            t + day_offset + next_week_offset if t != INF else INF
+                            for t in aligned_times
+                        ]
+                        trip_day_id_next = f"{trip['trip_id']}_day{day_id}_nextweek"
+                        trip_obj_next = Trip(trip_day_id_next, dep_times_next_monday)
+                        route.add_trip(trip_obj_next)
 
         try:
             out_path = Path(self.gtfs_folder + "non_monotone_trips.txt")

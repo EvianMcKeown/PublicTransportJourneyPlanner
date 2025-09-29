@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import threading
 from typing import Any, List, Dict, Tuple, Optional
 from datetime import datetime, timedelta
@@ -19,7 +20,7 @@ from algorithm_prototype.raptor import (
 )
 
 
-def to_mins(day: Optional[int], time_str: str) -> int:
+def to_mins(day: int, time_str: str) -> int:
     """
     Convert an optional day (0=Mon..6=Sun) and a time string "HH:MM" or "HH:MM:SS"
     into absolute minutes since Monday 00:00. If day is None, returns minutes
@@ -53,6 +54,65 @@ def to_mins(day: Optional[int], time_str: str) -> int:
         raise ValueError("day must be an integer in the range 0..6 (Mon..Sun).")
 
     return day * 24 * 60 + total
+
+
+def find_closest_stop(
+    lat: float, lon: float, stops: Dict[str, Stop]
+) -> Tuple[str, float]:
+    """
+    Find the closest stop to (lat, lon) using a divide and conquer closest pair algorithm.
+
+    Args:
+        lat: Target latitude
+        lon: Target longitude
+        stops: Dictionary of {stop_id: Stop} where Stop has .lat and .lon
+
+    Returns:
+        Tuple of (stop_id, distance_meters)
+    """
+    if not stops:
+        raise ValueError("No stops provided")
+
+    # Helper: haversine distance in meters
+
+    # Convert stops to points for processing
+    points = [(stop_id, stop.lat, stop.lon) for stop_id, stop in stops.items()]
+
+    # Sort by latitude for divide and conquer
+    points_sorted = sorted(points, key=lambda x: x[1])
+
+    def closest_pair_recursive(
+        points_list: List[Tuple[str, float, float]],
+    ) -> Tuple[str, float]:
+        n = len(points_list)
+
+        # Base case: brute force for small lists
+        if n <= 10:
+            min_dist = float("inf")
+            min_stop_id = None
+            for stop_id, stop_lat, stop_lon in points_list:
+                dist = hf.haversine(lat, lon, stop_lat, stop_lon)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_stop_id = stop_id
+            return min_stop_id, min_dist
+
+        # Divide
+        mid = n // 2
+        left_points = points_list[:mid]
+        right_points = points_list[mid:]
+
+        # Conquer
+        left_stop_id, left_dist = closest_pair_recursive(left_points)
+        right_stop_id, right_dist = closest_pair_recursive(right_points)
+
+        # Combine - return the closer of the two
+        if left_dist <= right_dist:
+            return left_stop_id, left_dist
+        else:
+            return right_stop_id, right_dist
+
+    return closest_pair_recursive(points_sorted)
 
 
 def _serialize_stop(s: Stop) -> Dict[str, Any]:
@@ -138,8 +198,10 @@ class RaptorEngine:
 
     def plan(
         self,
-        source_id: str,
-        target_id: str,
+        source_lat: float,
+        source_lon: float,
+        target_lat: float,
+        target_lon: float,
         departure_minutes: int,
         max_rounds: int = 5,
         custom_max_walk_dist: Optional[int] = None,
@@ -158,6 +220,40 @@ class RaptorEngine:
                 self.transfer_map = hf.create_transfer_map(self.transfers)
                 self.last_max_walk_distance = custom_max_walk_dist or MAX_WALK_DIST
 
+        # Find closest stops to source and target coordinates
+        try:
+            source_id, source_dist = find_closest_stop(
+                float(source_lat), float(source_lon), self.stops
+            )
+            target_id, target_dist = find_closest_stop(
+                float(target_lat), float(target_lon), self.stops
+            )
+
+            if debug:
+                print(
+                    f"Closest source stop: {source_id} (distance: {source_dist:.1f}m)"
+                )
+                print(
+                    f"Closest target stop: {target_id} (distance: {target_dist:.1f}m)"
+                )
+
+        except ValueError as e:
+            return {
+                "error": f"Failed to find closest stops: {str(e)}",
+                "result": {},
+                "path": [],
+                "path_objs": [],
+            }
+
+        # Validate stops exist
+        if source_id not in self.stops or target_id not in self.stops:
+            return {
+                "error": f"Invalid stops found: source={source_id}, target={target_id}",
+                "result": {},
+                "path": [],
+                "path_objs": [],
+            }
+
         # Run the algorithm
         result, path = raptor_algo(
             stops=self.stops,
@@ -169,6 +265,10 @@ class RaptorEngine:
             max_rounds=max_rounds,
             debug=debug,
         )
+
+        # Get earliest arrival at target
+        earliest_arrival = result.get(target_id, INF)
+
         # Enrich with objects (board_pos/disembark_pos aware), then make JSON-safe
         path_objs = reconstruct_path_objs(
             path=path,
@@ -177,6 +277,9 @@ class RaptorEngine:
             transfers_dict=self.transfer_map,
         )
         return {
+            "earliest_arrival": earliest_arrival if earliest_arrival != INF else None,
+            "source_stop": {"id": source_id, "distance_m": source_dist},
+            "target_stop": {"id": target_id, "distance_m": target_dist},
             "result": result,
             "path": path,
             "path_objs": _path_objs_to_json_safe(path_objs),

@@ -13,12 +13,14 @@ from rest_framework.serializers import (
 )
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 from rest_framework.views import APIView
 from .raptor_engine import get_engine, to_mins
 from .serializers import PlanRequestSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+import math
+from algorithm_prototype.raptor import helper_functions as hf
 
 from .models import (
     UserProfile,
@@ -42,6 +44,45 @@ from .serializers import (
     CalendarSerializer,
     CalendarDateSerializer,
 )
+
+
+def closest_stop(lat, lon, stops) -> Tuple[str, float]:
+    """
+    Find the closest stop to (lat, lon) using a divide and conquer closest pair algorithm.
+    stops: dict of {stop_id: Stop} where Stop has .lat and .lon
+    Returns: stop_id, distance_m
+    """
+    # Convert stops to points
+    points = [(sid, stop.lat, stop.lon) for sid, stop in stops.items()]
+
+    # Sort by latitude
+    points_sorted = sorted(points, key=lambda x: x[1])
+
+    # Recursive closest pair (1D for latitude, brute force for small n)
+    def closest_pair(points):
+        n = len(points)
+        if n <= 3:
+            # Brute force
+            min_dist = float("inf")
+            min_sid = None
+            for sid, plat, plon in points:
+                d = hf.haversine(lat, lon, plat, plon)
+                if d < min_dist:
+                    min_dist = d
+                    min_sid = sid
+            return min_sid, min_dist
+        mid = n // 2
+        left = points[:mid]
+        right = points[mid:]
+        sid_l, dist_l = closest_pair(left)
+        sid_r, dist_r = closest_pair(right)
+        # Take closer of left/right
+        if dist_l < dist_r:
+            return sid_l, dist_l
+        else:
+            return sid_r, dist_r
+
+    return closest_pair(points_sorted)
 
 
 # -------------------------------
@@ -90,28 +131,55 @@ class PlanJourneyView(APIView):
         ser.is_valid(raise_exception=True)
         data: Dict[str, Any] = ser.validated_data
 
-        source_id = data["source_id"].strip()
-        target_id = data["target_id"].strip()
+        engine = get_engine()
+
+        source_lat_p = float(data["source_lat"])
+        source_lon_p = float(data["source_lon"])
+        target_lat_p = float(data["target_lat"])
+        target_lon_p = float(data["target_lon"])
+
+        # need to find closest stops to given lat/lon
+        # source_id = data["source_id"].strip()
+        # target_id = data["target_id"].strip()
+        # if "source_lat" in data and "source_lon" in data:
+        #    source_id, _ = closest_stop(
+        #        data["source_lat"], data["source_lon"], engine.stops
+        #    )
+        # else:
+        #    source_id = data["source_id"].strip()
+        # if "target_lat" in data and "target_lon" in data:
+        #    target_id, _ = closest_stop(
+        #        data["target_lat"], data["target_lon"], engine.stops
+        #    )
+        # else:
+        #    target_id = data["target_id"].strip()
+
         if "departure_minutes" in data:
             dep_mins = int(data["departure_minutes"])
         else:
             dep_mins = to_mins(int(data["day"]), data["time"])
 
-        engine = get_engine()
         out = engine.plan(
-            source_id=source_id,
-            target_id=target_id,
+            source_lat=source_lat_p,  # Pass as float, not string
+            source_lon=source_lon_p,
+            target_lat=target_lat_p,
+            target_lon=target_lon_p,
             departure_minutes=dep_mins,
-            max_rounds=int(data.get("max_rounds", 5)),
-            debug=bool(data.get("debug", False)),
+            max_rounds=data.get("max_rounds", 5),
+            debug=False,
         )
 
         # Minimal response
+        target_id = out.get("target_stop", {}).get("id")
         return Response(
             {
-                "earliest_arrival": out["result"].get(target_id),
+                "earliest_arrival": out.get("earliest_arrival"),
                 "path": out["path"],  # ID-based steps
                 "path_objs": out["path_objs"],  # JSON-safe enriched steps
+                "source_stop": out.get(
+                    "source_stop"
+                ),  # Include stop info for debugging
+                "target_stop": out.get("target_stop"),
             },
             status=status.HTTP_200_OK,
         )

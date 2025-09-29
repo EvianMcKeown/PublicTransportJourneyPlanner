@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework.fields import CharField
+from rest_framework.serializers import FloatField, IntegerField
 from .models import (
     SavedRoute,
     UserProfile,
@@ -67,21 +69,21 @@ class StopTimeSerializer(serializers.ModelSerializer):
 
 
 class PlanRequestSerializer(serializers.Serializer):
-    source_id = serializers.CharField()
-    target_id = serializers.CharField()
-    departure_mins = serializers.IntegerField(required=False)
-    day = serializers.IntegerField(required=False, min_value=0, max_value=6)
-    time = serializers.RegexField(required=False, regex=r"^\d{1,2}:\d{2}$")
-    max_rounds = serializers.IntegerField(
-        required=False, default=5, min_value=1, max_value=20
-    )
+    source_lat = FloatField(required=True)
+    source_lon = FloatField(required=True)
+    target_lat = FloatField(required=True)
+    target_lon = FloatField(required=True)
+    day = IntegerField(required=True)
+    time = CharField(required=True)
+    max_rounds = IntegerField(required=False, default=5)
+    departure_minutes = IntegerField(required=False)
     debug = serializers.BooleanField(required=False, default=False)
 
     def validate(self, attrs):
-        if "departure_mins" not in attrs and (
+        if "departure_minutes" not in attrs and (
             "day" not in attrs or "time" not in attrs
         ):
             raise serializers.ValidationError(
-                "Provide either departure_mins or both day and time (HH:MM)."
+                "Provide either departure_minutes or both day and time (HH:MM)."
             )
         return attrs

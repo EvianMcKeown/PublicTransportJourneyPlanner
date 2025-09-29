@@ -1,13 +1,10 @@
 ### version 1
 # import multiprocessing as mp
 from dataclasses import dataclass, field
-from email.policy import default
-from hmac import new
 from os import name, walk
 import queue
 from re import I
 import sys
-from tracemalloc import stop
 from typing import Any, List, Dict, Literal, Optional, Tuple
 from math import ceil, radians, cos, sin, asin, sqrt
 from rtree import index
@@ -298,7 +295,7 @@ class helper_functions:
                 s1.lon - degree_offset,
                 s1.lat - degree_offset,
                 s1.lon + degree_offset,
-                s1.lon + degree_offset,
+                s1.lat + degree_offset,
             )
 
             candidate_indices = idx.intersection(bounding_box)
@@ -542,6 +539,7 @@ def raptor_algo(
                 # check whether we can board the trip (on this route) at any stop
                 # Try to board at earliest possible stop
                 boarded_at = None
+                best_board_time = None
                 for pos in range(start_pos, num_stops_in_route):
                     stop_idx = stop_indices[pos]
                     arr_prev = prev[stop_idx]
@@ -552,8 +550,9 @@ def raptor_algo(
                     if trip_departure == INF:
                         continue
                     if trip_departure >= arr_prev:
-                        boarded_at = pos
-                        break  # board at first possible stop, and stop checking
+                        if best_board_time is None or trip_departure < best_board_time:
+                            best_board_time = trip_departure
+                            boarded_at = pos
 
                 if boarded_at is None:
                     # can't use this trip from any marked stop
@@ -646,6 +645,10 @@ def raptor_algo(
                 # enforce strictly positive transfer time
                 walk_time = max(walk_time, MIN_TRANSFER_TIME)
                 new_arrival = arr_p + walk_time
+
+                if v == source_idx:
+                    # Don't overwrite source with later time
+                    continue
 
                 if new_arrival < cur[v] and new_arrival < best[v]:
                     if helper_functions.safe_set_predecessor(

@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from typing import Optional, Tuple
 from algorithm_prototype import raptor
 from algorithm_prototype.raptor import (
     Stop,
@@ -1068,3 +1069,300 @@ def test_week_wrap_formatting_and_raptor(tmp_path: Path):
     # verify formatting wraps over a whole week (7 days) correctly
     seven_days_plus = 7 * 24 * 60 + 62  # Mon + 01:02 next week
     assert GTFSReader.mins_to_str(seven_days_plus) == "Mon 01:02"
+
+
+def hm(s: str) -> int:
+    """Convert 'HH:MM' to minutes since midnight."""
+    h, m = map(int, s.split(":"))
+    return h * 60 + m
+
+
+def make_stops(stop_ids):
+    """Create Stop objects with dummy coordinates."""
+    stops = {}
+    for i, sid in enumerate(stop_ids):
+        # simple grid to avoid identical coords (not used by algo in this test)
+        lat = -33.9 + i * 0.001
+        lon = 18.4 + i * 0.001
+        stops[sid] = Stop(id=sid, mode=2, lat=lat, lon=lon, name=sid)  # 2=train
+    return stops
+
+
+def test_raptor_chooses_earliest_arrival_among_trips():
+    """
+    Given a single route with two trips (one faster, one slower), RAPTOR should
+    return the earliest possible arrival time for target.
+    We model the metrorail direction_id=1 case by ordering stops in increasing time
+    along the travel direction (i.e., reversed from the raw GTFS snippet).
+    """
+    # Stops ordered in travel direction from source -> target with increasing times
+    stops_in_order = [
+        "mr_52",
+        "mr_25",
+        "mr_9",
+        "mr_113",
+        "mr_6",
+        "mr_123",
+        "mr_93",
+        "mr_26",
+        "mr_126",
+        "mr_37",
+        "mr_122",
+        "mr_76",
+        "mr_136",
+        "mr_67",
+        "mr_50",
+        "mr_117",
+        "mr_133",
+        "mr_15",
+    ]
+
+    # Times aligned to the above order (in minutes since midnight)
+    base_times = list(
+        map(
+            hm,
+            [
+                "05:59",
+                "06:02",
+                "06:07",
+                "06:11",
+                "06:16",
+                "06:20",
+                "06:22",
+                "06:25",
+                "06:27",
+                "06:29",
+                "06:31",
+                "06:34",
+                "06:36",
+                "06:39",
+                "06:41",
+                "06:44",
+                "06:47",
+                "06:52",
+            ],
+        )
+    )
+
+    stops_dict = make_stops(stops_in_order)
+    route = Route(
+        id="mr_S5", stops=[stops_dict[sid] for sid in stops_in_order], name="Cape Town"
+    )
+
+    # Fast trip (original times)
+    fast_trip = Trip(id="mr_2508_day0", departure_times=base_times)
+    route.add_trip(fast_trip)
+
+    # Slower trip (+20 minutes everywhere)
+    slower_times = [t + 20 for t in base_times]
+    slow_trip = Trip(id="mr_9999_day0", departure_times=slower_times)
+    route.add_trip(slow_trip)
+
+    routes = {route.id: route}
+    transfers = []  # none needed for this test
+
+    # Start at mr_25 (06:02) with departure time 06:00 so we can board 06:02
+    source_id = "mr_25"
+    target_id = "mr_15"
+    departure_time = hm("06:00")
+
+    result, path = raptor_algo(
+        stops=stops_dict,
+        routes=routes,
+        transfers=transfers,
+        source_id=source_id,
+        target_id=target_id,
+        departure_time=departure_time,
+        max_rounds=4,
+        debug=True,
+    )
+
+    assert target_id in result, "Target missing from result"
+    assert result[target_id] != INF, "No path found to target"
+    # Expect earliest arrival from fast trip at 06:52 (not the slower trip at 07:12)
+    assert result[target_id] == hm("06:52")
+
+    # Optional: verify path ends at target with expected arrival time
+    assert path, "Path should not be empty"
+    assert path[-1]["stop_id"] == target_id
+    assert path[-1]["arrival_time"] == hm("06:52")
+
+
+def test_raptor_cannot_board_if_after_departure_at_source():
+    """
+    If departure_time is after the departure at the source stop and there are no transfers or later trips,
+    RAPTOR should not be able to reach the target (INF).
+    """
+    stops_in_order = ["mr_52", "mr_25", "mr_9"]
+    times = list(map(hm, ["05:59", "06:02", "06:07"]))
+
+    stops_dict = make_stops(stops_in_order)
+    route = Route(
+        id="mr_S5", stops=[stops_dict[sid] for sid in stops_in_order], name="Short"
+    )
+    trip = Trip(id="mr_2508_day0", departure_times=times)
+    route.add_trip(trip)
+
+    routes = {route.id: route}
+    transfers = []
+
+    source_id = "mr_52"
+    target_id = "mr_9"
+    # Depart after source departure, with no way to move to next stop
+    departure_time = hm("06:00")  # source dep was 05:59
+
+    result, path = raptor_algo(
+        stops=stops_dict,
+        routes=routes,
+        transfers=transfers,
+        source_id=source_id,
+        target_id=target_id,
+        departure_time=departure_time,
+        max_rounds=3,
+        debug=True,
+    )
+
+    assert result[target_id] == INF
+    assert path == []
+
+
+def _find_gtfs_pair(reader: GTFSReader) -> Optional[Tuple[Route, Trip, int, int]]:
+    """
+    Find a route, trip and two consecutive stop positions with finite, non-decreasing times.
+    Returns (route, trip, board_pos, disembark_pos) or None if not found.
+    """
+    for route in reader.routes.values():
+        if not route.trips or len(route.stops) < 2:
+            continue
+        for t in route.trips:
+            times = t.departure_times
+            for i in range(len(times) - 1):
+                a, b = times[i], times[i + 1]
+                if a != INF and b != INF and b >= a:
+                    return route, t, i, i + 1
+    return None
+
+
+def _last_trip_at_pos(
+    reader: GTFSReader, route: Route, pos: int, pos2: int
+) -> Optional[Trip]:
+    """
+    Among trips in 'route', pick a trip that has finite times at pos and pos2 and is the last (max) time at pos.
+    """
+    candidates = [
+        t
+        for t in route.trips
+        if t.departure_times[pos] != INF and t.departure_times[pos2] != INF
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda tr: tr.departure_times[pos])
+
+
+def _earliest_arrival_for_route_segment(route, dep_time, i, j):
+    """
+    Among trips in 'route', compute earliest feasible arrival at j when boarding
+    at or after dep_time at i.
+    """
+    best = None
+    best_trips = []
+    for t in route.trips:
+        ti, tj = t.departure_times[i], t.departure_times[j]
+        if ti != INF and tj != INF and tj >= ti and ti >= dep_time:
+            if best is None or tj < best:
+                best = tj
+                best_trips = [t]
+            elif tj == best:
+                best_trips.append(t)
+    return best, best_trips
+
+
+def _any_route_can_cover_after(
+    reader: GTFSReader, src_id: str, dst_id: str, late_departure: int
+) -> bool:
+    """
+    Check whether any route has an ordered pair (src_id -> dst_id) with a trip
+    that departs src at or after late_departure and reaches dst on that same trip.
+    """
+    for r in reader.routes.values():
+        stop_to_pos = {s.id: idx for idx, s in enumerate(r.stops)}
+        if src_id in stop_to_pos and dst_id in stop_to_pos:
+            si, dj = stop_to_pos[src_id], stop_to_pos[dst_id]
+            if si < dj:
+                for t in r.trips:
+                    a, b = t.departure_times[si], t.departure_times[dj]
+                    if a != INF and b != INF and b >= a and a >= late_departure:
+                        return True
+    return False
+
+
+def test_gtfs_segment_earliest_arrival_on_route():
+    """
+    Using the real GTFS DB, select a consecutive stop pair (i->j) on a route.
+    Assert RAPTOR returns the earliest feasible arrival among all trips in that route,
+    not necessarily the first trip we picked.
+    """
+    reader = GTFSReader()
+    pick = _find_gtfs_pair(reader)
+    if pick is None:
+        pytest.skip("No suitable route/trip pair found in GTFS")
+    route, trip, i, j = pick
+    src_id = route.stops[i].id
+    dst_id = route.stops[j].id
+    dep_time = trip.departure_times[i]
+
+    # Compute ground truth: earliest arrival across all trips of this route
+    expected_arrival, expected_trips = _earliest_arrival_for_route_segment(
+        route, dep_time, i, j
+    )
+    if expected_arrival is None:
+        pytest.skip("No feasible trip found at/after dep_time for the chosen segment")
+
+    result, path = raptor_algo(
+        stops=reader.stops,
+        routes=reader.routes,
+        transfers=[],  # avoid walking alternatives
+        source_id=src_id,
+        target_id=dst_id,
+        departure_time=dep_time,
+        max_rounds=3,
+        debug=True,
+    )
+
+    assert result[dst_id] == expected_arrival
+
+
+def test_gtfs_one_trip_segment_basic():
+    """
+    Using the real GTFS DB: pick any route/trip with two consecutive finite times and verify
+    RAPTOR reproduces that segment with the same arrival time and trip metadata.
+    """
+    reader = GTFSReader()
+    pick = _find_gtfs_pair(reader)
+    if pick is None:
+        pytest.skip("No suitable route/trip pair found in GTFS")
+    route, trip, i, j = pick
+    src_id = route.stops[i].id
+    dst_id = route.stops[j].id
+    dep_time = trip.departure_times[i]
+
+    result, path = raptor_algo(
+        stops=reader.stops,
+        routes=reader.routes,
+        transfers=[],  # avoid walking alternatives
+        source_id=src_id,
+        target_id=dst_id,
+        departure_time=dep_time,
+        max_rounds=3,
+        debug=True,
+    )
+
+    assert result[dst_id] == trip.departure_times[j]
+    # find the trip step
+    trip_step = next((s for s in path if s.get("mode") == "trip"), None)
+    assert trip_step is not None
+    assert trip_step["route_id"] == route.id
+    assert trip_step["trip_id"] == trip.id
+    # boarding/disembark indices present
+    assert trip_step.get("board_pos") == i
+    assert trip_step.get("disembark_pos") == j

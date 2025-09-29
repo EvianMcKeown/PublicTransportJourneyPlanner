@@ -18,6 +18,7 @@ from algorithm_prototype.raptor import (
     Transfer,
     MAX_WALK_DIST,
 )
+from algorithm_prototype.dijkstra import dijkstra_algo, _reconstruct_dijkstra_path
 
 
 def to_mins(day: int, time_str: str) -> int:
@@ -206,6 +207,7 @@ class RaptorEngine:
         max_rounds: int = 5,
         custom_max_walk_dist: Optional[int] = None,
         debug: bool = False,
+        use_dijkstra: bool = False,
     ) -> Dict[str, Any]:
         if not self._loaded:
             self.load(custom_max_walk_dist=custom_max_walk_dist)
@@ -254,17 +256,29 @@ class RaptorEngine:
                 "path_objs": [],
             }
 
-        # Run the algorithm
-        result, path = raptor_algo(
-            stops=self.stops,
-            routes=self.routes,
-            transfers=self.transfers,
-            source_id=source_id,
-            target_id=target_id,
-            departure_time=departure_minutes,
-            max_rounds=max_rounds,
-            debug=debug,
-        )
+        # Choose algorithm
+        if use_dijkstra:
+            result, path = dijkstra_algo(
+                stops=self.stops,
+                routes=self.routes,
+                transfers=self.transfers,
+                source_id=source_id,
+                target_id=target_id,
+                departure_time=departure_minutes,
+                max_rounds=max_rounds,
+                debug=debug,
+            )
+        else:
+            result, path = raptor_algo(
+                stops=self.stops,
+                routes=self.routes,
+                transfers=self.transfers,
+                source_id=source_id,
+                target_id=target_id,
+                departure_time=departure_minutes,
+                max_rounds=max_rounds,
+                debug=debug,
+            )
 
         # Get earliest arrival at target
         earliest_arrival = result.get(target_id, INF)

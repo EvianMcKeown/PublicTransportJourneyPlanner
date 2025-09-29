@@ -78,6 +78,7 @@ class PlanRequestSerializer(serializers.Serializer):
     max_rounds = IntegerField(required=False, default=5)
     departure_minutes = IntegerField(required=False)
     debug = serializers.BooleanField(required=False, default=False)
+    use_dijkstra = serializers.BooleanField(required=False, default=False)
 
     def validate(self, attrs):
         if "departure_minutes" not in attrs and (

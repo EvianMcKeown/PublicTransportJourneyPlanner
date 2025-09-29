@@ -385,7 +385,7 @@ export default function Home() {
                                                             Board: <span className="font-medium">{step.board_stop?.name || step.from_stop?.name}</span>
                                                         </p>
                                                         <p className="text-white/80">
-                                                            Alight: <span className="font-medium">{step.disembark_stop?.name || step.stop?.name}</span>
+                                                            Disembark: <span className="font-medium">{step.disembark_stop?.name || step.stop?.name}</span>
                                                         </p>
                                                         <div className="flex justify-between items-center text-xs text-white/60 mt-1">
                                                             <span>Stops: {step.disembark_pos - step.board_pos}</span>

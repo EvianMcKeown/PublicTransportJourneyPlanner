@@ -116,6 +116,48 @@ def find_closest_stop(
     return closest_pair_recursive(points_sorted)
 
 
+def _create_walk_transfer_step(
+    from_lat: float,
+    from_lon: float,
+    to_stop_id: str,
+    stops: Dict[str, Stop],
+    departure_time: int,
+    virtual_stop_id: str = None,
+) -> Dict[str, Any]:
+    """
+    Create a walk transfer step for the path.
+
+    Args:
+        from_lat: Starting latitude
+        from_lon: Starting longitude
+        to_stop_id: Target stop ID
+        stops: Dictionary of stops
+        departure_time: Time when the walk starts
+        virtual_stop_id: ID for the virtual starting location
+
+    Returns:
+        Dictionary representing the walk transfer step
+    """
+    to_stop = stops[to_stop_id]
+    distance_m = hf.haversine(from_lat, from_lon, to_stop.lat, to_stop.lon)
+
+    # Assume walking speed of 5 km/h (83.33 m/min)
+    walk_time_minutes = max(1, int(distance_m / 83.33))
+
+    # Create virtual stop for the start/end location
+    if virtual_stop_id is None:
+        virtual_stop_id = f"lat:{from_lat},lon:{from_lon}"
+
+    return {
+        "mode": "transfer",
+        "from_stop_id": virtual_stop_id,
+        "stop_id": to_stop_id,
+        "arrival_time": departure_time + walk_time_minutes,
+        "transfer_time": walk_time_minutes,
+        "distance_m": distance_m,
+    }
+
+
 def _serialize_stop(s: Stop) -> Dict[str, Any]:
     return {
         "id": s.id,
@@ -283,13 +325,74 @@ class RaptorEngine:
         # Get earliest arrival at target
         earliest_arrival = result.get(target_id, INF)
 
+        # Create enhanced path with walk transfers
+        enhanced_path = []
+
+        if path:  # Only add transfers if we have a valid path
+            # Add initial walk transfer at the beginning
+            initial_walk_step = _create_walk_transfer_step(
+                source_lat,
+                source_lon,
+                source_id,
+                self.stops,
+                departure_minutes,
+                "virtual_start",
+            )
+            enhanced_path.append(initial_walk_step)
+
+            # Add the original path steps
+            enhanced_path.extend(path)
+
+            # Add final walk transfer at the end
+            if earliest_arrival != INF:
+                final_walk_step = _create_walk_transfer_step(
+                    target_lat,
+                    target_lon,
+                    target_id,
+                    self.stops,
+                    earliest_arrival,
+                    "virtual_end",
+                )
+                # Reverse the direction for final walk (from stop to destination)
+                final_walk_step["from_stop_id"] = target_id
+                final_walk_step["stop_id"] = "virtual_end"
+                enhanced_path.append(final_walk_step)
+
+                # Update earliest arrival to include final walk
+                earliest_arrival = final_walk_step["arrival_time"]
+
+        # Create virtual stops for path reconstruction
+        virtual_start_stop = Stop(
+            id="virtual_start",
+            name="Starting Location",
+            lat=source_lat,
+            lon=source_lon,
+            mode=0,  # Walking
+        )
+        virtual_end_stop = Stop(
+            id="virtual_end",
+            name="Destination",
+            lat=target_lat,
+            lon=target_lon,
+            mode=0,  # Walking
+        )
+
+        # Enhanced stops dictionary for path reconstruction
+        enhanced_stops = dict(self.stops)
+        enhanced_stops["virtual_start"] = virtual_start_stop
+        enhanced_stops["virtual_end"] = virtual_end_stop
+
         # Enrich with objects (board_pos/disembark_pos aware), then make JSON-safe
         path_objs = reconstruct_path_objs(
-            path=path,
-            stops_dict=self.stops,
+            path=enhanced_path,
+            stops_dict=enhanced_stops,
             routes_dict=self.routes,
             transfers_dict=self.transfer_map,
         )
+
+        # Add virtual stop information to path objects
+        # path_objs = _add_virtual_stop_info_to_path_objs(path_objs, virtual_stops)
+
         return {
             "earliest_arrival": earliest_arrival if earliest_arrival != INF else None,
             "source_stop": {"id": source_id, "distance_m": source_dist},

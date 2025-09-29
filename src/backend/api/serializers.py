@@ -79,6 +79,10 @@ class PlanRequestSerializer(serializers.Serializer):
     departure_minutes = IntegerField(required=False)
     debug = serializers.BooleanField(required=False, default=False)
     use_dijkstra = serializers.BooleanField(required=False, default=False)
+    minimize_walking = serializers.BooleanField(required=False, default=False)
+    minimize_number_of_transfers = serializers.BooleanField(
+        required=False, default=False
+    )
 
     def validate(self, attrs):
         if "departure_minutes" not in attrs and (

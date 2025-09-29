@@ -11,6 +11,9 @@ export default function Home() {
     const [routeInfo, setRouteInfo] = useState(null);
     const [ptJourney, setPtJourney] = useState(null);
     const [planning, setPlanning] = useState(false);
+    const [minimizeWalking, setMinimizeWalking] = useState(false);
+    const [minimizeStops, setMinimizeStops] = useState(false);
+    const [useDijkstra, setUseDijkstra] = useState(false);
     const navigate = useNavigate();
 
     const now = new Date();
@@ -50,6 +53,8 @@ export default function Home() {
 
         console.log("PT Source coords:", sourceLat, sourceLon);
         console.log("PT Target coords:", targetLat, targetLon);
+        console.log("Algorithm:", useDijkstra ? "Dijkstra" : "RAPTOR");
+
 
         setPlanning(true);
         setPtJourney(null);
@@ -66,6 +71,9 @@ export default function Home() {
                     day: ptDay,
                     time: ptTime,
                     max_rounds: 5,
+                    minimize_walking: minimizeWalking,
+                    minimize_stops: minimizeStops,
+                    use_dijkstra: useDijkstra,
                 }),
             });
             const data = await resp.json();
@@ -76,6 +84,7 @@ export default function Home() {
             setPtJourney({
                 earliest_arrival: data?.earliest_arrival,
                 path_objs: data?.path_objs || [],
+                algorithm: useDijkstra ? "Dijkstra" : "RAPTOR",
             });
             showToast("Public transport plan ready.");
         } catch (e) {
@@ -302,13 +311,43 @@ export default function Home() {
                         <h2 className="text-lg font-semibold mb-3 text-blue-200">Journey Preferences</h2>
                         <form className="flex flex-col gap-3">
                             <label className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-all duration-200">
-                                <input type="checkbox" name="minWalking" className="accent-blue-500 w-4 h-4" />
+                                <input
+                                    type="checkbox"
+                                    name="minWalking"
+                                    className="accent-blue-500 w-4 h-4"
+                                    checked={minimizeWalking}
+                                    onChange={(e) => setMinimizeWalking(e.target.checked)}
+                                />
                                 <span>Minimize walking distance</span>
                             </label>
                             <label className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-all duration-200">
-                                <input type="checkbox" name="minStops" className="accent-blue-500 w-4 h-4" />
+                                <input
+                                    type="checkbox"
+                                    name="minStops"
+                                    className="accent-blue-500 w-4 h-4"
+                                    checked={minimizeStops}
+                                    onChange={(e) => setMinimizeStops(e.target.checked)}
+                                />
                                 <span>Minimize number of stops</span>
                             </label>
+                            <div className="border-t border-white/10 pt-3 mt-3">
+                                <h3 className="text-sm font-medium mb-2 text-blue-300">Algorithm Selection</h3>
+                                <label className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-all duration-200">
+                                    <input
+                                        type="checkbox"
+                                        name="useDijkstra"
+                                        className="accent-purple-500 w-4 h-4"
+                                        checked={useDijkstra}
+                                        onChange={(e) => setUseDijkstra(e.target.checked)}
+                                    />
+                                    <div className="flex flex-col">
+                                        <span>Use Dijkstra Algorithm</span>
+                                        <span className="text-xs text-white/60">
+                                            {useDijkstra ? "Currently: Dijkstra (shortest path)" : "Currently: RAPTOR (transit optimized)"}
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
                         </form>
                     </div>
 

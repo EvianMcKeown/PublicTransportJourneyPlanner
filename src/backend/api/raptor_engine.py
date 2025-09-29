@@ -250,6 +250,8 @@ class RaptorEngine:
         custom_max_walk_dist: Optional[int] = None,
         debug: bool = False,
         use_dijkstra: bool = False,
+        minimize_walking: bool = False,
+        minimize_stops: bool = False,
     ) -> Dict[str, Any]:
         if not self._loaded:
             self.load(custom_max_walk_dist=custom_max_walk_dist)
@@ -299,6 +301,13 @@ class RaptorEngine:
             }
 
         # Choose algorithm
+        if minimize_walking:
+            self.transfers = hf.create_transfers(self.stops, 200)
+            self.transfer_map = hf.create_transfer_map(self.transfers)
+        if minimize_stops:
+            # minimize number of transfers by setting max_rounds to a low value
+            max_rounds = 3
+
         if use_dijkstra:
             result, path = dijkstra_algo(
                 stops=self.stops,

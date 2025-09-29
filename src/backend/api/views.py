@@ -159,6 +159,11 @@ class PlanJourneyView(APIView):
         else:
             dep_mins = to_mins(int(data["day"]), data["time"])
 
+        # Extract preference parameters
+        minimize_walking = data.get("minimize_walking", False)
+        minimize_stops = data.get("minimize_stops", False)
+        use_dijkstra = data.get("use_dijkstra", False)
+
         out = engine.plan(
             source_lat=source_lat_p,  # Pass as float, not string
             source_lon=source_lon_p,
@@ -167,6 +172,9 @@ class PlanJourneyView(APIView):
             departure_minutes=dep_mins,
             max_rounds=data.get("max_rounds", 5),
             debug=False,
+            minimize_walking=minimize_walking,
+            minimize_stops=minimize_stops,
+            use_dijkstra=use_dijkstra,
         )
 
         # Minimal response
@@ -180,6 +188,7 @@ class PlanJourneyView(APIView):
                     "source_stop"
                 ),  # Include stop info for debugging
                 "target_stop": out.get("target_stop"),
+                "algorithm_used": "Dijkstra" if use_dijkstra else "RAPTOR",
             },
             status=status.HTTP_200_OK,
         )

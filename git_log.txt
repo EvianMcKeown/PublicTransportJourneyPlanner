@@ -1,0 +1,363 @@
+commit 27d9b7bf018a016279b86ad298dba95cf8272b43
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 08:54:43 2025 +0200
+
+    final
+
+commit 26e7259498ad1d4551c9e57168ff3cfbc89fd8ee
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 08:26:11 2025 +0200
+
+    added serializer options
+
+commit 9894a1877aa3deddc4bf2287c13a26cf03d8b4ad
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 07:52:16 2025 +0200
+
+    ui
+
+commit 1d2567e0e17a8a6bfd86ad61d3e61d73020a938c
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 07:14:42 2025 +0200
+
+    dijkstra finalised
+
+commit 9bf3fc483a2036852c74c31af8566d99b392a95f
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 06:36:47 2025 +0200
+
+    alight to disembark
+
+commit 85565fed0b3b4886ac188a30bdf755fbb2f089d4
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 06:32:03 2025 +0200
+
+    returns path - no initial or final walks included though
+
+commit 5a8e7386b0b2aaafccb41fe6b07b2fa7b82081f8
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 02:17:51 2025 +0200
+
+    wip algo
+
+commit 6b2707cae39e8581b8a68fef45dc50e3b27c670c
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 29 01:10:39 2025 +0200
+
+    text_output working - need exact stop_ids though
+
+commit 0b1637649b0314460fc7d8a8449ee9fa2a215f98
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 23:37:07 2025 +0200
+
+    wip rest api
+
+commit 39caa0827ffd241b9eccbe2ca290e7c4cba638b4
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 21:00:37 2025 +0200
+
+    update readme.md
+
+commit b7730f2644cbda04675314c0d98798db752fcd7a
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 20:59:10 2025 +0200
+
+    added more unit and integration tests
+
+commit 78231670d80c6177dfd9736a402a29ca4f2eddd6
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 20:57:39 2025 +0200
+
+    Delete .coverage
+
+commit 55ac4c6fae310d8193e9aa86b5651e6f436d260c
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 20:55:44 2025 +0200
+
+    changed .gitignore
+
+commit 84d8bfe39bba15241b124c1514adb254ad253f84
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 17:19:58 2025 +0200
+
+    path returns successfully (not 100% tested)
+
+commit cbf3a46e912c47f09ad30f3e8416b05fc3c1d148
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 14:25:37 2025 +0200
+
+    new data - currently routes.stops is a set (so doesn't handle duplicate stops) - will attempt to fix next
+
+commit fe0e60787c41a1be1b7328cd935d0bc447b3ddce
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sun Sep 28 13:06:53 2025 +0200
+
+    seems to be working decently - going to pass in the full gtfs data next
+
+commit 337fe5764740b1ecfb94d0a73266e8de66f523de
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sat Sep 27 21:14:52 2025 +0200
+
+    about to start working on predecessor logic
+
+commit e41b4f0b736563a0332bf91177acce606bfc0c39
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Fri Sep 26 17:35:10 2025 +0200
+
+    removed myciti data
+
+commit 3435f38877882115e92f1944d3dd7249589e94d1
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Fri Sep 26 17:29:14 2025 +0200
+
+    added test and remove myciti stops
+
+commit 092ad2d28cae7815613b2cbb648735a32b5940d6
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Fri Sep 26 14:58:21 2025 +0200
+
+    gtfs untested because data still wrong - about to start improving raptor based on simple test cases.
+
+commit 9fb4e9e988af2f59b463d616c1e2746cbb1f7f8b
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Sep 23 17:19:02 2025 +0200
+
+    removed golden arrow trips
+
+commit de82a4b4a33e87808b684a27542a89749e31324e
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Sep 23 17:17:07 2025 +0200
+
+    added tests and removed goldenarrow since the data is still incomplete...
+
+commit f8cf617baf3b146230f06ab91ce34cdfbea7d640
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Tue Sep 23 11:14:44 2025 +0200
+
+    wip - misc
+
+commit fa30b552ef800582ec2b0bffaed0a6922cbe2a81
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Mon Sep 22 15:31:58 2025 +0200
+
+    updated data (kinda - still not linkable)
+
+commit 25cf66b93488972481a1c7f95cc6b33368f1b24f
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 21:39:20 2025 +0200
+
+    start work on GTFS reader
+
+commit f75abf5bccf55c138a5180543dec7b1a1c232191
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 21:21:40 2025 +0200
+
+    GTFS folders restructuring
+
+commit 7c6eb890a6e05a72a6d5cb33998583141e3ef849
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 21:19:46 2025 +0200
+
+    added GTFS data
+
+commit f325c8c9f012d1295e9985d9e64177071380b8a5
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 21:06:26 2025 +0200
+
+    force origin arrival time to start time - might be a more general bug though TODO
+
+commit 46f734f562ea08ec836327c44d5e665ae2665192
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 20:26:54 2025 +0200
+
+    holy shit — seems to be working
+
+commit 4bd7d5746186fa895943ddb103d9abb2a0a5461c
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 20:17:25 2025 +0200
+
+    algo draft done
+
+commit eae710698eb5d0d46d46ea814b8e9c80a1d8b498
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Thu Sep 18 10:51:40 2025 +0200
+
+    wip - misc
+
+commit 2fac39a243917992be349640536c519e4aa4fa96
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Wed Sep 17 14:12:47 2025 +0200
+
+    raptor update - still not functional
+
+commit 45d779856a12c96dfb6969f9fd20ed6491d3e283
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Tue Sep 16 21:53:21 2025 +0200
+
+    data prep complete - i think
+
+commit 5ee10b6f8320e4c31fd1363cbc63eea4b96a38ed
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Tue Sep 16 09:20:44 2025 +0200
+
+    haversine formula initial implementation - TODO: separate out haversine into own distance function
+
+commit 963fd83eceb21e79260c2fd687f4c24310d7052d
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Fri Sep 12 11:01:28 2025 +0200
+
+    raptor v0.1 - not yet functional
+
+commit d73b15e2518edc91fc957ed3e0223cda9859ef2f
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Sat Sep 6 11:06:30 2025 +0200
+
+    added dijkstra
+
+commit 394b70a5dbd99ad18d71b48b19d539eed094af78
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Aug 21 20:24:24 2025 +0200
+
+    prototype code finalised
+
+commit 0752d7c3125327a751702c35177843d7e6f56ffa
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Aug 21 16:59:58 2025 +0200
+
+    fix to_string method for Route in models.py
+
+commit 6b12929566b480624bdcc55e2f284b9286a4bdeb
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Thu Aug 21 16:50:40 2025 +0200
+
+    added dummy route output to service.py
+
+commit d55fb83f083787de4c3c620ade0cf36b2ab7c36a
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Wed Aug 20 22:40:46 2025 +0200
+
+    added admin functionality
+
+commit d06d27da4fd8cbf2c6ea4d240ba435dbee3de87e
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Wed Aug 20 20:32:30 2025 +0200
+
+    basic django setup
+
+commit efd4b346fcadb8aedaa13269ca81ca24d6f73b78
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Aug 19 19:32:24 2025 +0200
+
+    fixed typo
+
+commit cf7f0202144d25652994cfaa3e292f27e702f658
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Aug 19 17:44:05 2025 +0200
+
+    Initial Django framework setup — planner app with service.py and state.py
+
+commit efc2ebcd7ce9c378b99e5e057a4e5d6d3a84d8bd
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Aug 19 14:45:52 2025 +0200
+
+    clean slate
+
+commit 19a845356adf589987cb6bdb019cb39e8105b242
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 12:44:58 2025 +0200
+
+    remove testsite clutter
+
+commit db6c44411c4ffbc7b5e828b82a5c849e5ccc454d
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 12:40:25 2025 +0200
+
+    test
+
+commit ff631b7616f3aa0f5a475363b997f744f1a10fec
+Merge: 4550a0c b117689
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 11:50:54 2025 +0200
+
+    Merge branch 'shaylen' into 'MCKEVI001'
+    
+    # Conflicts:
+    #   .gitignore
+
+commit 4550a0cbae0e5d7c49ceda68d587aac2ad0ae6aa
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 11:43:11 2025 +0200
+
+    fixed typo in gitignore
+
+commit 4d990f4d60234663f921c288cb9fc21d90691a6d
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 11:35:10 2025 +0200
+
+    initial django webpage setup (from MDN tutorial)
+
+commit 1933117a6eda4ac426551dff490de2f0d79e7dd3
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 10:56:05 2025 +0200
+
+    added __pychache__ to gitginore
+
+commit b117689249009254110d62ac68ea718a064f88d0
+Author: Shaylen Naidoo <ndxsha111@cs.uct.ac.za>
+Date:   Mon Aug 18 10:47:36 2025 +0200
+
+    intial setup
+
+commit 117225ab739836173ac9523bccdba3e746dcd268
+Author: Shaylen Naidoo <ndxsha111@cs.uct.ac.za>
+Date:   Mon Aug 18 10:42:14 2025 +0200
+
+    add .gitignore
+
+commit 349462d7b6a5d35aeeb541396d2fba12cd2837e6
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Mon Aug 18 10:38:15 2025 +0200
+
+    added .gitignore file and 'pip install django'
+
+commit 80ae5c40ef378ef236b97799dbefdb691051aa76
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Jul 29 09:39:24 2025 +0200
+
+    modified readme
+
+commit 5fcb8819d5c478bb2dbf2e1a1d8d08d405918b7e
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Jul 29 09:33:02 2025 +0200
+
+    Added checkbox to readme
+
+commit 95af2915eb5715355e5612b578c6b6c3caf9e4d1
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Jul 29 09:31:35 2025 +0200
+
+    testing
+
+commit 0d282447798a7cd4b564972040c715eb7fb3f2bb
+Author: Evian McKeown <mckevi001@cs.uct.ac.za>
+Date:   Tue Jul 29 09:29:42 2025 +0200
+
+    testing
+
+commit e11862ee05f58eb3ac9950e173c7f67ccff54670
+Author: Evian McKeown <mckevi001@myuct.ac.za>
+Date:   Tue Jul 29 09:22:59 2025 +0200
+
+    testing
+
+commit eb5546f14e72c4c3591f7139ac767ee666a4b21f
+Author: Evian McKeown <mckevi001@myuct.ac.za>
+Date:   Tue Jul 29 09:14:48 2025 +0200
+
+    update readme.md
+
+commit 61e852cf65e643bb1d6b7a18ab578c2612f1bbf6
+Author: Evian Mc Keown <mckevi001@cs.uct.ac.za>
+Date:   Tue Jul 29 08:47:24 2025 +0200
+
+    Initial commit

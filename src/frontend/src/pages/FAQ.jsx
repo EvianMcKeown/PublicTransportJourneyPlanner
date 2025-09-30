@@ -52,7 +52,7 @@ export default function FAQ() {
                     <h2 className="text-2xl font-semibold mb-4 text-[#001f4d]">Watch the help video below</h2>
                     <div className="aspect-w-16 aspect-h-9">
                         <iframe
-                            src="/vid.mp4" type="video/mp4"
+                            src="/vid2.mp4" type="video/mp4"
                             title="Journey plan walkthrough"
                             className="w-full h-[315px] sm:h-[500px]"
                             allowFullScreen

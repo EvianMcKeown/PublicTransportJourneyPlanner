@@ -85,12 +85,13 @@ python manage.py runserver
 python manage.py runserver
 ```
 
+### Start the Frontend server
+```bash
+npm run dev
+
+note the port number given here — this will be used to access the webapp
+```
 ### Access the web app
 ```bash
-http://localhost:8000
-```
-
-### Query journey plans via REST API
-```bash
-GET /api/journey?source=<stop_id>&target=<stop_id>&departure_time=<HH:MM>
+http://localhost:<port-number>
 ```

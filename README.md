@@ -17,7 +17,7 @@ Unlike traditional shortest-path algorithms (e.g., Dijkstra’s), RAPTOR works i
 - Efficient journey planning using the RAPTOR algorithm.  
 - Django-based web backend for queries and routing.  
 - Integration with GTFS data (`trips.txt`, `stop_times.txt`, etc.).  
-- REST API endpoint to request journeys (source stop → destination stop).  
+- REST API to request journeys (source stop → destination stop).  
 - Filtering and cleaning scripts for GTFS preprocessing.  
 
 ---
@@ -33,47 +33,37 @@ Unlike traditional shortest-path algorithms (e.g., Dijkstra’s), RAPTOR works i
 
 ## Badges
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)  
-[![Django](https://img.shields.io/badge/Django-5.0-green.svg)](https://www.djangoproject.com/)  
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)  
-
----
-
-## Visuals
-
-(Include screenshots or GIFs here once the frontend is ready. For now, example API request/response logs could be shown.)  
-
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.0-green.svg)](https://www.djangoproject.com/)
 
 ---
 
 ## Installation
 
 ### Requirements
-- Python 3.7+  
-- Django 5.0+  
-- GTFS dataset (CSV files)  
+- Python 3.0+  
+- Django  
+- GTFS dataset  
 
 ### Setup
 ```bash
 # Clone the repo
 git clone https://gitlab.cs.uct.ac.za/mckevi001/capstone-project-MCKEVI001-JSSBEN002-NDXSHA111.git
-cd raptor-journey-planner
+cd <project dir>
 
 # Create virtual environment
-python -m venv venv
-source venv/bin/activate
+python -m venv env
+source env/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+cd src/frontend
+npm install
+npm fund
 
 # Apply database migrations
+cd ../backend
 python manage.py migrate
-
-# Load GTFS data into the database (scripts provided in /scripts)
-python scripts/load_gtfs.py
-
-# Run the server
-python manage.py runserver
 ```
 
 ---

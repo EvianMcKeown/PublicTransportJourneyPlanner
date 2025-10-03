@@ -2,3 +2,4 @@ djangorestframework
 django-cors-headers
 pytest
 djangorestframework-simplejwt
+rtree
